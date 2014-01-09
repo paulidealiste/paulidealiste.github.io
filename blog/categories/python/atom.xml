@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Python | Creative morphometrics]]></title>
+  <link href="http://paulidealiste.github.io/blog/categories/python/atom.xml" rel="self"/>
+  <link href="http://paulidealiste.github.io/"/>
+  <updated>2014-01-09T22:34:15+01:00</updated>
+  <id>http://paulidealiste.github.io/</id>
+  <author>
+    <name><![CDATA[Miloš Blagojević]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Colorful Outlines for Shape Comparison]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/01/09/colorful-outlines-for-shape-comparison/"/>
+    <updated>2014-01-09T19:55:01+01:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/01/09/colorful-outlines-for-shape-comparison</id>
+    <content type="html"><![CDATA[<p>This procedure is based on the outlines generated from the digital photos using imageJ and converting imageJ images to x-y continuous outline data available from <a href="http://goo.gl/TYSzf0" target="_blank">here</a>. Its goal is to present a visual overview of global shape differences between roe deer (<em>Capreolus capreolus</em>) populations, using landmark data from ventral projection of their crania. All outlines are based on deformation via Thin Plate Splines, using mean shapes for populations as deformation targets and references. Superimposition methods as well as preliminary GM analyses were done in R and marvelous <em>geomorph</em> package by Dean Adams and Erik Otarola-Castillo. Additionally, since one of the common points of contemporary scientific research is the reproducibility of solutions offered all posts will also contain randomly generated sample data that could be used similarly to real-world datasets. Sample generation can be very useful, especially in teaching, so I intend to focus on it in future posts.</p>
+
+<p><code>r Importing libraries and generating the basic dataset (files should be placed in your working directory)
+library(geomorph)
+library(ggplot2)
+library(Morpho)
+d &lt;- read.table("ventralnoOutlineCap.txt") #outline data
+load("capreolusRgen.RData")
+capreolusArray &lt;- capreolusSample1 #or capreolusSample2-5
+</code>
+The workspace &ldquo;capreolusRgen.RData&rdquo; (which can be downloaded from <a href="http://goo.gl/4uKerX" target="_blank">here</a>) contains several randomly generated datasetes of 657 individuals and 28 landmarks, named &ldquo;capreolusSample#&rdquo;. These data was generated on the basis of real-world values, using the linear regression model to control random number generators. The code that was used probably does not repoduce the sampling of landmarks well, especially regarding correlations between pairs of landmark coordinates or the landmarks that conform to the object symmetry, but for the purpose of illustration in this post, I hope they should be fine.</p>
+
+<p><code>r Procrustes superimposition
+capreolusGPA &lt;- gpagen(capreolusArray, ShowPlot = FALSE)
+pop &lt;- sample(3, 657, replace = TRUE) #generate random 3 population partition
+pop[which(pop == 1)] &lt;- "pop1"
+pop[which(pop == 2)] &lt;- "pop2"
+pop[which(pop == 3)] &lt;- "pop3"
+capreolus &lt;- capreolusGPA$coords #extract landmark coordinates
+</code></p>
+
+<p>Following the Procrustes superimposition is the calculation of mean shapes, both for all males and for separate populations. After mean shapes are calculated the only thing left is to use TPS in order to deform outlines (variable d), using mean shape of all males as a reference and mean shape of populations as target. This can all be done using <em>Morpho</em> R-package from Stefan Schlager.</p>
+
+<p><code>r Mean shapes and TPS deformations
+meanCap &lt;- mshape(capreolus)
+meanPop1 &lt;- mshape(capreolus[,,which(pop == "pop1")]) #by population
+meanPop2 &lt;- mshape(capreolus[,,which(pop == "pop2")])
+meanPop3 &lt;- mshape(capreolus[,,which(pop == "pop3")])
+pop1 &lt;- data.frame(tps3d(as.matrix(d), meanCap, meanPop1)) #for each population
+pop2 &lt;- data.frame(tps3d(as.matrix(d), meanCap, meanPop2))
+pop3 &lt;- data.frame(tps3d(as.matrix(d), meanCap, meanPop3))
+capWhole &lt;- rbind(pop1, pop2, pop3) #combine data
+pops &lt;- c(rep("pop1", 2836), rep("pop2", 2836), rep("pop3", 2836)) #outline has 2836 points
+</code></p>
+
+<p>Finally, depicting shape changes can be achieved by wonderful Hadley Wickham`s <em>ggplot2</em> R-package. This package has a neat way of &ldquo;forcing&rdquo; you to keep your data organized, so all variables are inside one data frame, both quantitative and qualitative.</p>
+
+<p><code>r ggplot2 plotting of shape outline deformations
+wholeCap &lt;- data.frame(capWhole, pops) #deformed outlines and population membership
+theme_set(theme_bw()) #change default ggplot theme to b&amp;w
+dplot &lt;- ggplot(wholeCap, aes(wholeCap[,1],wholeCap[,2], group = pops)) #initialize ggplot object
+dplot &lt;- dplot + geom_path(size = 1, aes(color = pops)) + facet_grid(.~pops) #add layers
+dplot + theme(axis.title = element_blank(), axis.text = element_blank(), axis.ticks = element_blank())
+</code></p>
+
+<p><img class="center" src="/images/post1outline.png" width="616" height="546" title="&lsquo;Outlines&rsquo;" ></p>
+
+<p>By inspecting outlines it can be seen that the individuals from pop1 are the smallest while the ones from pop2 are the largest. Shape differences are also determined by the relationship of length to width, so that individuals from pop2 have the widest crania, while the ones from pop1 have the narrowest. Also, it can be seen that in the individuals with the largest crania, size differences are detemined mostly by dimensions of the anterior part, maxillary and rostral regions, that are both wider and longer with respect to individuals with smaller crania. Posterior part of the cranium is more similar between individuals from different populations, and it may be more stable.</p>
+]]></content>
+  </entry>
+  
+</feed>
