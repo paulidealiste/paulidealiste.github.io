@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Adventurous Software - Creative morphometrics</title>
+  <meta name="author" content="Miloš Blagojević">
+
+  
+  <meta name="description" content="Adventurous Software Jan 8th, 2014 Computational power and availability provided by both R and python are tremenduous. Shape analysis requires &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://paulidealiste.github.io/software">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Creative morphometrics" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Creative morphometrics</a></h1>
+  
+    <h2>Using R and python for colorful research of biological shape</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:paulidealiste.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/software">Software</a></li>
+  <li><a href="/about">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article role="article">
+  
+  <header>
+    <h1 class="entry-title">Adventurous Software</h1>
+    <p class="meta">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-08T09:40:00+01:00" pubdate data-updated="true">Jan 8<span>th</span>, 2014</time></p>
+  </header>
+  
+  <p><img class="center" src="/images/logos.png" width="616" height="211" title="'Logos'" ></p>
+
+<p>Computational power and availability provided by both <a href="http://www.r-project.org/">R</a> and <a href="http://www.python.org/">python</a> are tremenduous. Shape analysis requires acessible and versatile software for performing statistical procedures and matrix algebra, so both of the languages are a good choice, since the main data structure in both of them is the matrix or a multidimensional matrix. Both R and python have a great collection of libraries that enable all of the required analyses. Also, online (and offline) community of users is enormous so any problem can be solved easily, in the cloud.</p>
+
+<p>In R, there are several libraries that implement procedures for the biological analysis of shape, mainly landmark data, but also outline data. There are four packages for performing geometric morphometrics in R and they are maintained actively by their authors, who are also willing to help with their usage.</p>
+
+<ol>
+<li><a href="http://cran.r-project.org/web/packages/geomorph/">geomorph</a></li>
+<li><a href="http://cran.r-project.org/web/packages/shapes/index.html">shapes</a></li>
+<li><a href="http://cran.r-project.org/web/packages/Morpho/index.html">Morpho</a></li>
+<li><a href="http://cran.r-project.org/web/packages/Momocs/index.html">Momocs</a></li>
+</ol>
+
+
+<p>Apart from the packages there is a wonderful book about doing morphometric analyses in R, conveniently named <a href="http://www.springer.com/statistics/life+sciences,+medicine+%26+health/book/978-0-387-77789-4">Morphometrics in R</a>, from Julien Claude, written in 2008. This book is one of the best starting points for R in general, morphometric theory and practical usage of all GM analyses.</p>
+
+<p>Python is a general-purpose programming language that has unbelievably large user base but there are no specific packages for geometric morphometrics, yet. On the other hand, python offers some of the most powerfull linear algebra libraries <a href="http://www.numpy.org/">numpy</a> and <a href="http://scipy.org/">scipy</a>. Also, there are other libraries commonly used in scientific data analysis such as <a href="http://pandas.pydata.org/">pandas</a> for flexible data manipulation and uniterrupted workflow and <a href="http://matplotlib.org/">matplotlib</a> that offers great visualizations. The best thing about scientific python usage is the availability of the language distributions budled with all the libraries needed for scientific data analysis. This is commonly known as <em>scipy stack</em> that is easily installed on all major operating systems (Linux, Windows and OSX). The overview of scientific python distributions is given <a href="http://scipy.org/install.html">here</a>.</p>
+
+<p>Finally, both R and python rely on command line interface for all analytic steps. R comes with the basic Tcl/Tk command line interface that offers basic functionality for controlling the workflow. Python has IDLE, command line interface that is very similar to basic R. Fortunately, both languages have superb IDEs (Integrated Development Environments) that enable flexible and versatile coding practice. For R there is <a href="http://www.rstudio.com/">R studio</a> and for Python there is <a href="http://www.jetbrains.com/pycharm/download/">PyCharm community edition</a>. Scientific python distributions also pack with the fenomenal <a href="http://ipython.org/">IPython</a> enhanced console that offers much flexibility in entering commands and esspecially for generating nicely formatted HTML reports, neatly organized. R Studio also has great report generation sytstem through the <a href="http://yihui.name/knitr/">knitr</a> package and its own markdown system.</p>
+
+  
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <img class="center none" src="/images/roehead.png" width="207" height="347" title="'Roe deer'" >
+<center>I am an adventurer in the wonderful world of biological shape analysis. Mostly this blog includes posts about R and python routines for doing shape analyses and displaying beautiful results.</center><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/01/09/colorful-outlines-for-shape-comparison/">Colorful Outlines for Shape Comparison</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Miloš Blagojević -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
