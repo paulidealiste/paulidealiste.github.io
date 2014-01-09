@@ -5,6 +5,8 @@ date: 2014-01-08 09:40
 comments: false
 sharing: false
 footer: false
+keywords: "software, R, python, numpy, scipy, matplotlib, geomorph, ggplot2, shapes"
+description: "This page shows the software packages available in R or python needed for shape analysis"
 ---
 
 {% img center /images/logos.png 616 211 'Logos' %} 

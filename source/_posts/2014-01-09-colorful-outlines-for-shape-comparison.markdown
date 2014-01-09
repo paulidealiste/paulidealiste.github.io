@@ -3,7 +3,9 @@ layout: post
 title: "Colorful outlines for shape comparison"
 date: 2014-01-09 19:55:01 +0100
 comments: false
-categories: 
+categories: ["octopress", "morphometrics", "R", "python"]
+keywords: "morphometrics, outlines, color, shape, R, geomorph"
+description: "This post shows R procedure to generate coloured outline deformations in order to compare cranial shapes between groups"
 ---
 
 This procedure is based on the outlines generated from the digital photos using imageJ and converting imageJ images to x-y continuous outline data available from <a href="http://goo.gl/TYSzf0" target="_blank">here</a>. Its goal is to present a visual overview of global shape differences between roe deer (*Capreolus capreolus*) populations, using landmark data from ventral projection of their crania. All outlines are based on deformation via Thin Plate Splines, using mean shapes for populations as deformation targets and references. Superimposition methods as well as preliminary GM analyses were done in R and marvelous *geomorph* package by Dean Adams and Erik Otarola-Castillo. Additionally, since one of the common points of contemporary scientific research is the reproducibility of solutions offered all posts will also contain randomly generated sample data that could be used similarly to real-world datasets. Sample generation can be very useful, especially in teaching, so I intend to focus on it in future posts. 
