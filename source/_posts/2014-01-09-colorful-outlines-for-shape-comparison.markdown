@@ -3,7 +3,7 @@ layout: post
 title: "Colorful outlines for shape comparison"
 date: 2014-01-09 19:55:01 +0100
 comments: false
-categories: ["octopress", "morphometrics", "R", "python"]
+categories: ["R", "morphometrics"]
 keywords: "morphometrics, outlines, color, shape, R, geomorph"
 description: "This post shows R procedure to generate coloured outline deformations in order to compare cranial shapes between groups"
 ---
