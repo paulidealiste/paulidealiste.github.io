@@ -73,17 +73,3 @@ plt.grid()
 {% img center /images/FigMonster2.png 600 445 'Second monster' %}
 
 Generated "monsters" are just there to get the idea of a possible shape, although the create the impression of the "outline", such that all landmarks are sampled from the outer perimeter of the object. The code presented would not be complete if it wasn`t for the help from people from stackoverflow ([here](http://goo.gl/DWOCLJ), [here](http://goo.gl/y9Kpv3) and [here](http://goo.gl/xwL4Dz)).
-
-<div id="disqus_thread"></div>
-<script type="text/javascript">
-/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
-var disqus_shortname = 'creativemorphometrics'; // required: replace example with your forum shortname
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
