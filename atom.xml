@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Creative morphometrics]]></title>
+  <link href="http://paulidealiste.github.io/atom.xml" rel="self"/>
+  <link href="http://paulidealiste.github.io/"/>
+  <updated>2014-02-23T15:13:39+01:00</updated>
+  <id>http://paulidealiste.github.io/</id>
+  <author>
+    <name><![CDATA[Miloš Blagojević]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[R Generator and a Colorful PCA]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/02/23/r-generator-and-a-colorful-pca/"/>
+    <updated>2014-02-23T11:24:16+01:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/02/23/r-generator-and-a-colorful-pca</id>
+    <content type="html"><![CDATA[<p>As simple as it may seem, sample data generation is not a trivial task, especially when random landmarks are to be generated. Usually, one would use multivariate normal distribution-based generator (like mvrnorm in R`s MASS package) in order to generate correlated data. The following function was used to generate data similar to the real world datased, unfortunately based directly on it, by using the coefficients from regressions between successive columns in a data matrix, which represent landmark coordinates in XY data matrix. The following function uses <a href="http://goo.gl/ijI1kn" target="_blank">this</a> data matrix (446 individuals and 28 landmarks), and performs regressions between X-Y pairs for all coordinates. Finally it uses intercepts and slopes to infer mean and SD for rnorm function, random number generator.</p>
+
+<figure class='code'><figcaption><span>Resampler function for random resamples of a real data matrix</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>resampler <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>mat<span class="p">)</span> <span class="c1">#simulations based on rnorm random sampling</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  x <span class="o">&lt;-</span> dim<span class="p">(</span>mat<span class="p">)[</span><span class="m">1</span><span class="p">]</span>
+</span><span class='line'>  y <span class="o">&lt;-</span> dim<span class="p">(</span>mat<span class="p">)[</span><span class="m">2</span><span class="p">]</span>
+</span><span class='line'>  indexrow <span class="o">&lt;-</span> c<span class="p">(</span><span class="m">2</span><span class="o">:</span>x<span class="p">)</span>
+</span><span class='line'>  combinations <span class="o">&lt;-</span> matrix<span class="p">(</span>c<span class="p">(</span><span class="m">1</span><span class="o">:</span>y<span class="p">,</span><span class="m">2</span><span class="o">:</span>y<span class="p">),</span> ncol <span class="o">=</span> <span class="m">2</span><span class="p">)</span> <span class="c1">#ignore the warning message</span>
+</span><span class='line'>  slope <span class="o">&lt;-</span> numeric<span class="p">(</span>y<span class="p">)</span>
+</span><span class='line'>  intercept <span class="o">&lt;-</span> numeric<span class="p">(</span>y<span class="p">)</span>
+</span><span class='line'>  sds <span class="o">&lt;-</span> numeric<span class="p">(</span>y<span class="p">)</span>
+</span><span class='line'>  <span class="kr">for</span><span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span>y<span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    veca <span class="o">&lt;-</span> mat<span class="p">[,</span>combinations<span class="p">[</span>i<span class="p">,]][,</span><span class="m">1</span><span class="p">]</span>
+</span><span class='line'>    vecb <span class="o">&lt;-</span> mat<span class="p">[,</span>combinations<span class="p">[</span>i<span class="p">,]][,</span><span class="m">2</span><span class="p">]</span>
+</span><span class='line'>    model <span class="o">&lt;-</span> lm<span class="p">(</span>veca<span class="o">~</span>vecb<span class="p">)</span>
+</span><span class='line'>    slope<span class="p">[</span>i<span class="p">]</span> <span class="o">&lt;-</span> coef<span class="p">(</span>model<span class="p">)[</span><span class="m">2</span><span class="p">]</span>
+</span><span class='line'>    intercept<span class="p">[</span>i<span class="p">]</span> <span class="o">&lt;-</span> coef<span class="p">(</span>model<span class="p">)[</span><span class="m">1</span><span class="p">]</span>
+</span><span class='line'>    sds<span class="p">[</span>i<span class="p">]</span> <span class="o">&lt;-</span> sd<span class="p">(</span>mat<span class="p">[,</span>combinations<span class="p">[</span>i<span class="p">,]][,</span><span class="m">1</span><span class="p">])</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  coefs <span class="o">&lt;-</span> data.frame<span class="p">(</span>intercept<span class="p">,</span>slope<span class="p">,</span>sds<span class="p">)</span>
+</span><span class='line'>  cexox <span class="o">&lt;-</span> data.frame<span class="p">(</span>c<span class="p">(</span><span class="m">1</span><span class="o">:</span>x<span class="p">))</span>
+</span><span class='line'>  <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span>y<span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    dataCol <span class="o">&lt;-</span> rnorm<span class="p">(</span>length<span class="p">(</span>mat<span class="p">[,</span>combinations<span class="p">[</span>i<span class="p">,]][,</span><span class="m">2</span><span class="p">]),</span>mean<span class="o">=</span>intercept<span class="p">[</span>i<span class="p">]</span><span class="o">+</span>slope<span class="p">[</span>i<span class="p">]</span><span class="o">*</span>mat<span class="p">[,</span>combinations<span class="p">[</span>i<span class="p">,]][,</span><span class="m">2</span><span class="p">],</span>sd<span class="o">=</span>sds<span class="p">)</span>
+</span><span class='line'>    cexox <span class="o">&lt;-</span> cbind<span class="p">(</span>cexox<span class="p">,</span> dataCol<span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  sampleMatrix <span class="o">&lt;-</span> as.matrix<span class="p">(</span>cexox<span class="p">)</span>
+</span><span class='line'>  sampleMatrix <span class="o">&lt;-</span> sampleMatrix<span class="p">[,</span><span class="m">-1</span><span class="p">]</span>
+</span><span class='line'>  <span class="kr">return</span><span class="p">(</span>sampleMatrix<span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>resampledCap <span class="o">&lt;-</span> resampler<span class="p">(</span>capreolusMatrix<span class="p">)</span> <span class="c1">#resample the original matrix-generate random coordinates</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When the function finishes the output is also an XY matrix, which needs to be converted to an array in order to use it in gpagen function from the <em>geomorph</em> package. After that the procedure follows all the usual steps of the GM analysis, with the exception of factor levels generation in order to simulate grouping, and finally performing PCA on the Procrustes shape variables.</p>
+
+<figure class='code'><figcaption><span>Basic GM procedures and factor level generation</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>library<span class="p">(</span>geomorph<span class="p">)</span>
+</span><span class='line'>capreolusArray <span class="o">&lt;-</span> arrayspecs<span class="p">(</span>resampledCap<span class="p">,</span> <span class="m">28</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> byLand <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
+</span><span class='line'>capreolusGPA <span class="o">&lt;-</span> gpagen<span class="p">(</span>capreolusArray<span class="p">,</span> ShowPlot <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
+</span><span class='line'>pop <span class="o">&lt;-</span> sample<span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="m">446</span><span class="p">,</span> replace <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span> <span class="c1">#generate random 5 population partition</span>
+</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">1</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop1&quot;</span>
+</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">2</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop2&quot;</span>
+</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">3</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop3&quot;</span>
+</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">4</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop4&quot;</span>
+</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">5</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop5&quot;</span>
+</span><span class='line'>capreolusGPA2d <span class="o">&lt;-</span> two.d.array<span class="p">(</span>capreolusGPA<span class="o">$</span>coords<span class="p">)</span> <span class="c1">#get the data in XY format for PCA</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>PCA is then done using the usual R`s prcomp function and <em>ggplot2</em> for plotting the data points using fantastic <a href="http://colorbrewer2.org/" target="_blank">ColorBrewer</a> color schemes (which are the names of types and palettes in <em>ggplot2</em> scale_color_brewer geom). In order to fine-tune the PCA figure, the ggplot2 can also use custom fonts for plot annotation. Prior to that, fonts must be imported and registered, which is greatly facilitated by using the <em>extrafont</em> library.</p>
+
+<figure class='code'><figcaption><span>PCA and ggplot2 code for a PCA scatterplot</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>capPCAwhole <span class="o">&lt;-</span> prcomp<span class="p">(</span>capreolusGPA2d<span class="p">)</span>
+</span><span class='line'>capPCA <span class="o">&lt;-</span> data.frame<span class="p">(</span>capPCAwhole<span class="o">$</span>x<span class="p">[,</span><span class="m">1</span><span class="p">],</span> capPCAwhole<span class="o">$</span>x<span class="p">[,</span><span class="m">2</span><span class="p">],</span> capPCAwhole<span class="o">$</span>x<span class="p">[,</span><span class="m">3</span><span class="p">],</span> capPCAwhole<span class="o">$</span>x<span class="p">[,</span><span class="m">4</span><span class="p">])</span>
+</span><span class='line'>capPCA <span class="o">&lt;-</span> data.frame<span class="p">(</span>capPCA<span class="p">,</span> pop<span class="p">)</span>
+</span><span class='line'>names<span class="p">(</span>capPCA<span class="p">)</span> <span class="o">&lt;-</span> c<span class="p">(</span><span class="s">&quot;PC1&quot;</span><span class="p">,</span><span class="s">&quot;PC2&quot;</span><span class="p">,</span><span class="s">&quot;PC3&quot;</span><span class="p">,</span><span class="s">&quot;PC4&quot;</span><span class="p">,</span><span class="s">&quot;pop&quot;</span><span class="p">)</span> <span class="c1">#prepare a data.frame for ggplot2</span>
+</span><span class='line'>meanPCA1 <span class="o">&lt;-</span> aggregate<span class="p">(</span>capPCA<span class="p">[,</span><span class="m">1</span><span class="p">],</span> mean<span class="p">,</span> by <span class="o">=</span> list<span class="p">(</span>capPCA<span class="p">[,</span><span class="m">5</span><span class="p">]))</span> <span class="c1">#calculate average PC score per group for plotting</span>
+</span><span class='line'>meanPCA2 <span class="o">&lt;-</span> aggregate<span class="p">(</span>capPCA<span class="p">[,</span><span class="m">2</span><span class="p">],</span> mean<span class="p">,</span> by <span class="o">=</span> list<span class="p">(</span>capPCA<span class="p">[,</span><span class="m">5</span><span class="p">]))</span>
+</span><span class='line'>meanPCA <span class="o">&lt;-</span> data.frame<span class="p">(</span>meanPCA1<span class="p">,</span> meanPCA2<span class="p">[,</span><span class="m">2</span><span class="p">])</span>
+</span><span class='line'>names<span class="p">(</span>meanPCA<span class="p">)</span> <span class="o">&lt;-</span> c<span class="p">(</span><span class="s">&quot;pop&quot;</span><span class="p">,</span><span class="s">&quot;PC1&quot;</span><span class="p">,</span><span class="s">&quot;PC2&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>library<span class="p">(</span>extrafont<span class="p">)</span> <span class="c1">#for using i.e. Times New Roman Fonts in ggplots</span>
+</span><span class='line'>font_import<span class="p">(</span>pattern<span class="o">=</span><span class="s">&quot;[T/t]imes&quot;</span><span class="p">)</span> <span class="c1">#this imports Times font family</span>
+</span><span class='line'>loadfonts<span class="p">(</span>device<span class="o">=</span><span class="s">&quot;pdf&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>library <span class="p">(</span>ggplot2<span class="p">)</span>
+</span><span class='line'>theme_set<span class="p">(</span>theme_bw<span class="p">())</span>
+</span><span class='line'>pcaplot <span class="o">&lt;-</span> ggplot<span class="p">(</span>capPCA<span class="p">,</span> aes<span class="p">(</span>x<span class="o">=</span>PC1<span class="p">,</span> y<span class="o">=</span>PC2<span class="p">,</span> group <span class="o">=</span> pop<span class="p">))</span> <span class="o">+</span> geom_point<span class="p">(</span>size <span class="o">=</span> <span class="m">7</span><span class="p">,</span> shape <span class="o">=</span> <span class="m">19</span><span class="p">,</span> aes<span class="p">(</span>color<span class="o">=</span>pop<span class="p">))</span> <span class="o">+</span> scale_color_brewer<span class="p">(</span>palette<span class="o">=</span><span class="s">&quot;Set1&quot;</span><span class="p">)</span>
+</span><span class='line'>pcaplot <span class="o">&lt;-</span> pcaplot <span class="o">+</span> theme<span class="p">(</span>panel.grid.major <span class="o">=</span> element_line<span class="p">(</span>size <span class="o">=</span> <span class="m">0.8</span><span class="p">,</span> linetype <span class="o">=</span> <span class="m">2</span><span class="p">))</span> <span class="o">+</span> theme<span class="p">(</span>panel.grid.minor <span class="o">=</span> element_line<span class="p">(</span>size <span class="o">=</span> <span class="m">1</span><span class="p">,</span> linetype <span class="o">=</span> <span class="m">2</span><span class="p">))</span>
+</span><span class='line'>pcaplot <span class="o">&lt;-</span> pcaplot <span class="o">+</span> theme<span class="p">(</span>text<span class="o">=</span>element_text<span class="p">(</span>size<span class="o">=</span><span class="m">20</span><span class="p">,</span> family<span class="o">=</span><span class="s">&quot;Times New Roman&quot;</span><span class="p">),</span> legend.text<span class="o">=</span>element_text<span class="p">(</span>size <span class="o">=</span> <span class="m">22</span><span class="p">,</span> family <span class="o">=</span> <span class="s">&quot;Times New Roman&quot;</span><span class="p">),</span> legend.title <span class="o">=</span> element_text<span class="p">(</span>family <span class="o">=</span><span class="s">&quot;Times New Roman&quot;</span><span class="p">))</span> <span class="o">+</span> xlab<span class="p">(</span><span class="s">&quot;PC1&quot;</span><span class="p">)</span> <span class="o">+</span> ylab<span class="p">(</span><span class="s">&quot;PC2&quot;</span><span class="p">)</span>
+</span><span class='line'>pcaplot <span class="o">&lt;-</span> pcaplot <span class="o">+</span> geom_point<span class="p">(</span>data <span class="o">=</span> meanPCA<span class="p">,</span> size <span class="o">=</span> <span class="m">14</span><span class="p">,</span> shape <span class="o">=</span> <span class="m">19</span><span class="p">)</span> <span class="o">+</span> geom_text<span class="p">(</span>data <span class="o">=</span> meanPCA<span class="p">,</span> size <span class="o">=</span> <span class="m">10</span><span class="p">,</span> label <span class="o">=</span> meanPCA<span class="o">$</span>pop<span class="p">,</span> family <span class="o">=</span> <span class="s">&quot;Times New Roman&quot;</span><span class="p">,</span> vjust <span class="o">=</span> <span class="m">-0.9</span><span class="p">)</span>
+</span><span class='line'>pcaplot
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="http://paulidealiste.github.io/images/pcaplot.png" width="616" height="466" title="'PCA'" ></p>
+
+<p>The plot indicates very little differentiation between the populations, but I guess that`s well expected since so much randomness is at hand.</p>
+
+<div id="disqus_thread"></div>
+
+
+<script type="text/javascript">
+/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+var disqus_shortname = 'creativemorphometrics'; // required: replace example with your forum shortname
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+
+
+<p><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[XY Outlines in GIMP and imageJ]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/02/01/xy-outlines-in-gimp-and-imagej/"/>
+    <updated>2014-02-01T11:23:55+01:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/02/01/xy-outlines-in-gimp-and-imagej</id>
+    <content type="html"><![CDATA[<p>This post continues on the first post about outline deformations and presents a simple way for generating outlines as XY data. XY format is very convenient for representing outline and line art in R or python. This type of visualization can be produced using <a href="http://www.gimp.org" target="_blank">GIMP</a> and <a href="http://rsbweb.nih.gov/ij" target="_blank">imageJ</a> through a sequence of easy steps. GIMP enables easy extraction of the central object from the image background. First step in outline extraction should be the precise definition of the object boundaries, such that the contrast between the object and the background is maximal. Example picture for this post is available <a href="http://goo.gl/bkirX7" target="_blank">here</a>. After opening the picture in GIMP workspace it looks like in Figure 1.</p>
+
+<p><img src="http://paulidealiste.github.io/images/Gimp1.png" width="375" height="289" title="'Gimp import'" > <img class="right" src="http://paulidealiste.github.io/images/Gimp2.png" width="375" height="290" title="'Gimp scissors'" ></p>
+
+<p>The easiest way to separate this chamois cranium from its background is to use <code>Scissor Select Tool</code> from the GIMP toolbox. This tool can nicely track the path between sucessive control points that should be placed along the desired object (Figure 2). When control points are placed along the shape, selection can be completed by pressing enter, and the background can be deleted by inverting selection pressing <code>Ctrl+I</code>. and deleting it using the delete key (Figure 3). Selection should be inverted once more and converted to path; from the <code>Select</code> menu <code>To Path</code>. Finally, stroke path (Figure 4, path card and right click on selection, <code>Stroke path</code>) gives the desired outline that can be exported as .tiff for imageJ through <code>Export</code> in the <code>File</code> menu.</p>
+
+<p><img src="http://paulidealiste.github.io/images/Gimp3.png" width="375" height="290" title="'Gimp no background'" > <img class="right" src="http://paulidealiste.github.io/images/Gimp4.png" width="375" height="289" title="'Gimp stroke path'" ></p>
+
+<p>In imageJ, picture should be converted to binary in <code>Process</code> menu, by selecting <code>Binary</code> and <code>Make Binary</code>. Final step is saving the binary image selection as XY data. First the outline should be selected by the magic wand selection tool (Figure 5) and then the image should be saved in XY format, in <code>File</code> menu, <code>Save as</code> and select <code>XY coordinates</code>. The XY data is also available <a href="http://goo.gl/d44PxK" target="_blank">here</a>.</p>
+
+<p><img src="http://paulidealiste.github.io/images/GimpNo.png" width="310" height="326" title="'imageJ'" ></p>
+
+<p>Now the .txt file could be easily imported into R and python.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Random Landmark Monsters in Python]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/01/17/simple-random-landmarks-in-python/"/>
+    <updated>2014-01-17T11:36:06+01:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/01/17/simple-random-landmarks-in-python</id>
+    <content type="html"><![CDATA[<p>Generating random datasets is facilitated by powerful algorithms in both R and python that are capable of drawing random numbers from predefined distributions. For simulating geometric morphometric data the only important constraint is correlation between x and y coordinates of landmarks. Spacing of landmarks in also important, especially if the aim is to generte life-like data set, but it is not essential (hopefully) for morphometric analyses to work. Python scipy stack (<em>numpy</em>, <em>scipy</em>, <em>pandas</em> and <em>matplotlib</em> + Ipython console) is a great budnle which enables both random number generators and great visualizations. The code presented in this post uses all of these libraries, especially <em>pandas</em>, which offer the basic data structure used for storing landmark data, DataFrame. Also, it can just be pasted into Ipython console window (afer installing any of the scipy stack python distributions). The basic idea is to use uniform distribution random number generator (line 7) in order to generate ranges for the spacing of landmark groups, and then multivariate normal random distribution for creating the two-column correlated data (x, y coordinates, line 8). This code will simulate the situation with 10 landmarks recorded on 200 individuals. Spacing of landmarks can be controlled by the ranges of uniform generators (175-220 in code), and the spread of landmarks is contolled by input covariance matrix for multivariate normal generators ([[3,0],[0,3]] in code).</p>
+
+<figure class='code'><figcaption><span>Importing libraries and generating random landmarks</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">brewer2mpl</span> <span class="kn">as</span> <span class="nn">bmpl</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">scipy.interpolate</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">coordstest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">10</span><span class="p">)])</span><span class="o">.</span><span class="n">T</span> <span class="c">#genereta coordinate ranges - spacing of landmarks</span>
+</span><span class='line'><span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">coordstest</span><span class="p">[</span><span class="n">i</span><span class="p">,:],</span> <span class="p">[[</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">]],</span> <span class="mi">200</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)])</span> <span class="c">#correlated x and y from multivariate normal</span>
+</span><span class='line'><span class="n">coordinates</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="c">#generate factor coodinates each landmark has 200 recorded points</span>
+</span><span class='line'><span class="n">coordinates</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
+</span><span class='line'><span class="n">allCoords</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">])</span> <span class="c">#coordinates DataFrame</span>
+</span><span class='line'><span class="n">allCoords</span><span class="p">[</span><span class="s">&#39;coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coordinates</span>
+</span><span class='line'><span class="n">meanCoords</span> <span class="o">=</span> <span class="n">allCoords</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s">&#39;coordinates&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="c">#mean landmark coordiantes</span>
+</span><span class='line'><span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'><span class="n">ind</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span>
+</span><span class='line'><span class="n">meanCoords</span><span class="p">[</span><span class="s">&#39;ind&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ind</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>allCoords contain all generated landmarks, while meanCoords is the collection of mean coordinates for each landmark. In order to visualize the generated data, a convenient &ldquo;outline&rdquo; can be drawn, connecting all landmarks smoothly. Since generated landmarks are not ordered in a way that permits simple connect-the-dots line between them, they should be rotated, and ordered differently. This can be done by using the centroid coordinates (from all landmarks) and the polar angle between the lines connecting centroid and each landmark. If polar angle is used, then landmarks (from meanCoords) can be ordered according to its value, clockwise. Polar angle can be calculated as the arctan between x and y coordinates of mean landmarks and the centroid.</p>
+
+<figure class='code'><figcaption><span>Calculating polar angle and re-ordering of the meanCoords</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">meanCoords</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">])</span> <span class="c">#convenience function</span>
+</span><span class='line'><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">meanCoords</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
+</span><span class='line'><span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+</span><span class='line'><span class="n">cent</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">meanCoords</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">])</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">meanCoords</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">meanCoords</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">])</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">meanCoords</span><span class="p">))</span> <span class="c">#the overall centroid</span>
+</span><span class='line'><span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">points</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">cent</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">points</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">cent</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c">#summary polar angle of all points</span>
+</span><span class='line'><span class="n">points</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
+</span><span class='line'><span class="n">angle</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+</span><span class='line'><span class="n">points</span><span class="p">[</span><span class="s">&#39;angle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">angle</span>
+</span><span class='line'><span class="n">points</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="s">&#39;angle&#39;</span><span class="p">)</span> <span class="c">#sort by polar angle from the centroid</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If a path would be drawn between the mean landmarks now, it would be irregular, and not too informative. One way of constructing the smooth connection between landmarks is to use interpolation algorithms that are part of <em>scipy.interpolate</em>. One issue with this approach is the connection between the first and the last landmark, since it must be added to points DataFrame as eleventh landmark, with x,y coords the same as for the first one, in order to complete the path. This added segment behaves erratically during interpolation so the generated figures might be distorted. But this will not happen always and all program routines could be re-run as long as the desired, nice, result emerges.</p>
+
+<figure class='code'><figcaption><span>Interpolation of the outline data</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">x_hull</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">])</span>
+</span><span class='line'><span class="n">x_hull</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_hull</span><span class="p">,</span> <span class="n">x_hull</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c">#add first landmark as the last one (x)</span>
+</span><span class='line'><span class="n">y_hull</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
+</span><span class='line'><span class="n">y_hull</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y_hull</span><span class="p">,</span> <span class="n">y_hull</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c">#add first landmark as the last one (y)</span>
+</span><span class='line'><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">x_hull</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</span><span class='line'><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">x_hull</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">x_hull</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">y_hull</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">y_hull</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+</span><span class='line'><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</span><span class='line'><span class="n">t</span> <span class="o">/=</span> <span class="n">t</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</span><span class='line'><span class="n">nt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+</span><span class='line'><span class="n">x1</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">spline</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_hull</span><span class="p">,</span> <span class="n">nt</span><span class="p">)</span> <span class="c">#interpolated coordines for smooth lines</span>
+</span><span class='line'><span class="n">y1</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">interpolate</span><span class="o">.</span><span class="n">spline</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y_hull</span><span class="p">,</span> <span class="n">nt</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Finally, plots are produced sequentially, first all landmarks, then mean landmarks, and finally the outline.</p>
+
+<figure class='code'><figcaption><span>Plotting</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">allCoords</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">allCoords</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">],</span> <span class="n">s</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="s">&quot;#FFD699&quot;</span><span class="p">,</span> <span class="n">edgecolors</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span><span class="p">)</span> <span class="c">#plot all sampled points</span>
+</span><span class='line'><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">ind</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="mi">60</span><span class="p">,</span> <span class="n">cmap</span> <span class="o">=</span> <span class="n">bmpl</span><span class="o">.</span><span class="n">get_map</span><span class="p">(</span><span class="s">&#39;Set3&#39;</span><span class="p">,</span> <span class="s">&#39;qualitative&#39;</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span><span class="o">.</span><span class="n">mpl_colormap</span><span class="p">)</span> <span class="c">#plot means with color brewer palette</span>
+</span><span class='line'><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="s">&#39;--&#39;</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="s">&quot;#97CAFF&quot;</span><span class="p">,</span> <span class="n">lw</span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span> <span class="c">#plot outlines</span>
+</span><span class='line'><span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Landmark {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>
+</span><span class='line'><span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">points</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> <span class="n">points</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">]):</span> <span class="c">#annotate mean landmarks by numbers</span>
+</span><span class='line'> <span class="n">plt</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">xy</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="mf">0.3</span><span class="p">),</span><span class="n">ha</span> <span class="o">=</span> <span class="s">&#39;right&#39;</span><span class="p">,</span> <span class="n">va</span> <span class="o">=</span> <span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="http://paulidealiste.github.io/images/FigMonster1.png" width="600" height="466" title="'First monster'" >
+<img class="center" src="http://paulidealiste.github.io/images/FigMonster2.png" width="600" height="445" title="'Second monster'" ></p>
+
+<p>Generated &ldquo;monsters&rdquo; are just there to get the idea of a possible shape, although the create the impression of the &ldquo;outline&rdquo;, such that all landmarks are sampled from the outer perimeter of the object. The code presented would not be complete if it wasn`t for the help from people from stackoverflow (<a href="http://goo.gl/DWOCLJ">here</a>, <a href="http://goo.gl/y9Kpv3">here</a> and <a href="http://goo.gl/xwL4Dz">here</a>).</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Colorful Outlines for Shape Comparison]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/01/09/colorful-outlines-for-shape-comparison/"/>
+    <updated>2014-01-09T19:55:01+01:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/01/09/colorful-outlines-for-shape-comparison</id>
+    <content type="html"><![CDATA[<p>This procedure is based on the outlines generated from the digital photos using imageJ and converting imageJ images to x-y continuous outline data available from <a href="http://goo.gl/TYSzf0" target="_blank">here</a>. Its goal is to present a visual overview of global shape differences between roe deer (<em>Capreolus capreolus</em>) populations, using landmark data from ventral projection of their crania. All outlines are based on deformation via Thin Plate Splines, using mean shapes for populations as deformation targets and references. Superimposition methods as well as preliminary GM analyses were done in R and marvelous <em>geomorph</em> package by Dean Adams and Erik Otarola-Castillo. Additionally, since one of the common points of contemporary scientific research is the reproducibility of solutions offered all posts will also contain randomly generated sample data that could be used similarly to real-world datasets. Sample generation can be very useful, especially in teaching, so I intend to focus on it in future posts.</p>
+
+<figure class='code'><figcaption><span>Importing libraries and generating the basic dataset (files should be placed in your working directory)</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>library<span class="p">(</span>geomorph<span class="p">)</span>
+</span><span class='line'>library<span class="p">(</span>ggplot2<span class="p">)</span>
+</span><span class='line'>library<span class="p">(</span>Morpho<span class="p">)</span>
+</span><span class='line'>d <span class="o">&lt;-</span> read.table<span class="p">(</span><span class="s">&quot;ventralnoOutlineCap.txt&quot;</span><span class="p">)</span> <span class="c1">#outline data</span>
+</span><span class='line'>load<span class="p">(</span><span class="s">&quot;capreolusRgen.RData&quot;</span><span class="p">)</span>
+</span><span class='line'>capreolusArray <span class="o">&lt;-</span> capreolusSample1 <span class="c1">#or capreolusSample2-5</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The workspace &ldquo;capreolusRgen.RData&rdquo; (which can be downloaded from <a href="http://goo.gl/4uKerX" target="_blank">here</a>) contains several randomly generated datasetes of 657 individuals and 28 landmarks, named &ldquo;capreolusSample#&rdquo;. These data was generated on the basis of real-world values, using the linear regression model to control random number generators. The code that was used probably does not repoduce the sampling of landmarks well, especially regarding correlations between pairs of landmark coordinates or the landmarks that conform to the object symmetry, but for the purpose of illustration in this post, I hope they should be fine.</p>
+
+<figure class='code'><figcaption><span>Procrustes superimposition</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>capreolusGPA <span class="o">&lt;-</span> gpagen<span class="p">(</span>capreolusArray<span class="p">,</span> ShowPlot <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
+</span><span class='line'>pop <span class="o">&lt;-</span> sample<span class="p">(</span><span class="m">3</span><span class="p">,</span> <span class="m">657</span><span class="p">,</span> replace <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span> <span class="c1">#generate random 3 population partition</span>
+</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">1</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop1&quot;</span>
+</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">2</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop2&quot;</span>
+</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">3</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop3&quot;</span>
+</span><span class='line'>capreolus <span class="o">&lt;-</span> capreolusGPA<span class="o">$</span>coords <span class="c1">#extract landmark coordinates</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Following the Procrustes superimposition is the calculation of mean shapes, both for all males and for separate populations. After mean shapes are calculated the only thing left is to use TPS in order to deform outlines (variable d), using mean shape of all males as a reference and mean shape of populations as target. This can all be done using <em>Morpho</em> R-package from Stefan Schlager.</p>
+
+<figure class='code'><figcaption><span>Mean shapes and TPS deformations</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>meanCap <span class="o">&lt;-</span> mshape<span class="p">(</span>capreolus<span class="p">)</span>
+</span><span class='line'>meanPop1 <span class="o">&lt;-</span> mshape<span class="p">(</span>capreolus<span class="p">[,,</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="s">&quot;pop1&quot;</span><span class="p">)])</span> <span class="c1">#by population</span>
+</span><span class='line'>meanPop2 <span class="o">&lt;-</span> mshape<span class="p">(</span>capreolus<span class="p">[,,</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="s">&quot;pop2&quot;</span><span class="p">)])</span>
+</span><span class='line'>meanPop3 <span class="o">&lt;-</span> mshape<span class="p">(</span>capreolus<span class="p">[,,</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="s">&quot;pop3&quot;</span><span class="p">)])</span>
+</span><span class='line'>pop1 <span class="o">&lt;-</span> data.frame<span class="p">(</span>tps3d<span class="p">(</span>as.matrix<span class="p">(</span>d<span class="p">),</span> meanCap<span class="p">,</span> meanPop1<span class="p">))</span> <span class="c1">#for each population</span>
+</span><span class='line'>pop2 <span class="o">&lt;-</span> data.frame<span class="p">(</span>tps3d<span class="p">(</span>as.matrix<span class="p">(</span>d<span class="p">),</span> meanCap<span class="p">,</span> meanPop2<span class="p">))</span>
+</span><span class='line'>pop3 <span class="o">&lt;-</span> data.frame<span class="p">(</span>tps3d<span class="p">(</span>as.matrix<span class="p">(</span>d<span class="p">),</span> meanCap<span class="p">,</span> meanPop3<span class="p">))</span>
+</span><span class='line'>capWhole <span class="o">&lt;-</span> rbind<span class="p">(</span>pop1<span class="p">,</span> pop2<span class="p">,</span> pop3<span class="p">)</span> <span class="c1">#combine data</span>
+</span><span class='line'>pops <span class="o">&lt;-</span> c<span class="p">(</span>rep<span class="p">(</span><span class="s">&quot;pop1&quot;</span><span class="p">,</span> <span class="m">2836</span><span class="p">),</span> rep<span class="p">(</span><span class="s">&quot;pop2&quot;</span><span class="p">,</span> <span class="m">2836</span><span class="p">),</span> rep<span class="p">(</span><span class="s">&quot;pop3&quot;</span><span class="p">,</span> <span class="m">2836</span><span class="p">))</span> <span class="c1">#outline has 2836 points</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Finally, depicting shape changes can be achieved by wonderful Hadley Wickham`s <em>ggplot2</em> R-package. This package has a neat way of &ldquo;forcing&rdquo; you to keep your data organized, so all variables are inside one data frame, both quantitative and qualitative.</p>
+
+<figure class='code'><figcaption><span>ggplot2 plotting of shape outline deformations</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>wholeCap <span class="o">&lt;-</span> data.frame<span class="p">(</span>capWhole<span class="p">,</span> pops<span class="p">)</span> <span class="c1">#deformed outlines and population membership</span>
+</span><span class='line'>theme_set<span class="p">(</span>theme_bw<span class="p">())</span> <span class="c1">#change default ggplot theme to b&amp;w</span>
+</span><span class='line'>dplot <span class="o">&lt;-</span> ggplot<span class="p">(</span>wholeCap<span class="p">,</span> aes<span class="p">(</span>wholeCap<span class="p">[,</span><span class="m">1</span><span class="p">],</span>wholeCap<span class="p">[,</span><span class="m">2</span><span class="p">],</span> group <span class="o">=</span> pops<span class="p">))</span> <span class="c1">#initialize ggplot object</span>
+</span><span class='line'>dplot <span class="o">&lt;-</span> dplot <span class="o">+</span> geom_path<span class="p">(</span>size <span class="o">=</span> <span class="m">1</span><span class="p">,</span> aes<span class="p">(</span>color <span class="o">=</span> pops<span class="p">))</span> <span class="o">+</span> facet_grid<span class="p">(</span>.<span class="o">~</span>pops<span class="p">)</span> <span class="c1">#add layers</span>
+</span><span class='line'>dplot <span class="o">+</span> theme<span class="p">(</span>axis.title <span class="o">=</span> element_blank<span class="p">(),</span> axis.text <span class="o">=</span> element_blank<span class="p">(),</span> axis.ticks <span class="o">=</span> element_blank<span class="p">())</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="http://paulidealiste.github.io/images/post1outline.png" width="616" height="546" title="'Outlines'" ></p>
+
+<p>By inspecting outlines it can be seen that the individuals from pop1 are the smallest while the ones from pop2 are the largest. Shape differences are also determined by the relationship of length to width, so that individuals from pop2 have the widest crania, while the ones from pop1 have the narrowest. Also, it can be seen that in the individuals with the largest crania, size differences are detemined mostly by dimensions of the anterior part, maxillary and rostral regions, that are both wider and longer with respect to individuals with smaller crania. Posterior part of the cranium is more similar between individuals from different populations, and it may be more stable.</p>
+]]></content>
+  </entry>
+  
+</feed>
