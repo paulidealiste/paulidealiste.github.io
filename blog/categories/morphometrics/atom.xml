@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Morphometrics | Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/blog/categories/morphometrics/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-02-23T23:31:43+01:00</updated>
+  <updated>2014-03-08T19:39:01+01:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -12,6 +12,146 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Python Forcing Monsters` Shape]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/03/08/python-forcing-monsters%60-shape/"/>
+    <updated>2014-03-08T11:49:21+01:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/03/08/python-forcing-monsters`-shape</id>
+    <content type="html"><![CDATA[<p>Continuing on one of the previous posts about data generation in python, next natural step in the analytic procedure is the Procrustes superimposition. Since this procedure enables direct analyses of configurations` shape, and all subsequent explorative visualizations, it must be employed first. This post concerns with the basic superimposition procedure, involving only two landmark configurations, i.e. two generated monsters. One monster will be used as a reference and one as a target, which should undergo superimposition. First steps in data genration are the same as before, with the exception of polarRotator function that can take any numpy array and reorder it according to polar rotation angle. This is very useful since generated landmarks are not ordered properly and do not &ldquo;feel natural&rdquo; in plots and analyses.</p>
+
+<p>```r Library import, data generation and some functions</p>
+
+<p>import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt</p>
+
+<p>def centsize(M):   #centroid size of any configuration matrix
+  p = M.shape[0]
+  csize = np.sqrt(np.sum(M.var(0))*(p-1))
+  return csize</p>
+
+<p>def polarRotator(M):   #polar rotation for natural ordering of landmarks
+  x = np.array(M[:,0])
+  y = np.array(M[:,1])
+  points = np.array((x,y)).T
+  cent = (np.sum(x)/len(M), np.sum(y)/len(M))
+  angle = np.arctan2(points[:,1]-cent[1],points[:,0]-cent[0])
+  points = pd.DataFrame(points, columns = [&lsquo;x&rsquo;,&lsquo;y&rsquo;])
+  angle = pd.Series(angle)
+  points[&lsquo;angle&rsquo;] = angle
+  points = points.sort(&lsquo;angle&rsquo;)
+  rotatedMat = np.array(points[[&lsquo;x&rsquo;,&lsquo;y&rsquo;]])
+  return rotatedMat</p>
+
+<p>coordstest = np.vstack([np.random.uniform(175, 220, 10), np.random.uniform(175, 220, 10)]).T
+monster1 = np.vstack([np.random.multivariate_normal(coordstest[i,:], [[3,0],[0,3]], 1) for i in range(10)])
+monster2 = np.vstack([np.random.multivariate_normal(coordstest[i,:], [[3,0],[0,3]], 1) for i in range(10)])</p>
+
+<p>monster1 = polarRotator(monster1)
+monster2 = polarRotator(monster2)
+```
+The plot of configurations reveals their spatial relationship, as well as the general mean shape. This time, since landmarks are ordered properly, one line would be enough for representing mean shapes, and shapes of respective configurations.</p>
+
+<p>```r Plotting the original monsters</p>
+
+<p>plt.scatter(monster1[:,0], monster1[:,1], s = 80, c = &ldquo;#FFD200&rdquo;, edgecolors = &lsquo;none&rsquo;, label = &ldquo;monster1&rdquo;)
+plt.plot(monster1[:,0], monster1[:,1], &lsquo;&mdash;&rsquo;, color = &ldquo;#FFD200&rdquo;)
+plt.scatter(monster2[:,0], monster2[:,1], s = 80, c = &ldquo;#47BFDD&rdquo;, edgecolors = &lsquo;none&rsquo;, label = &ldquo;monster2&rdquo;)
+plt.plot(monster2[:,0], monster2[:,1], &lsquo;&mdash;&rsquo;, color = &ldquo;#47BFDD&rdquo;)</p>
+
+<p>meanMon = (monster1 + monster2) / 2 #calculate mean shape
+plt.scatter(meanMon[:,0], meanMon[:,1], s = 90, c = &ldquo;#6a12c4&rdquo;, edgecolors = &lsquo;none&rsquo;, label = &ldquo;mean monster&rdquo;)
+plt.plot(meanMon[:,0], meanMon[:,1], &lsquo;&ndash;&rsquo;, color = &ldquo;#6a12c4&rdquo;)</p>
+
+<p>labels = [&lsquo;Landmark {0}&rsquo;.format(i) for i in range(10)]
+for label, x, y in zip(labels, meanMon[:,0], meanMon[:,1]): #annotate mean landmarks by numbers
+  plt.annotate(label, xy = (x, y+0.3), ha = &lsquo;right&rsquo;, va = &lsquo;bottom&rsquo;)</p>
+
+<p>plt.grid()
+plt.legend(loc = &ldquo;lower left&rdquo;)
+```</p>
+
+<p><img class="center" src="/images/example1preProc.png" width="616" height="462" title="&lsquo;pre Procrustes 1&rsquo;" >
+<img class="center" src="/images/example2preProc.png" width="616" height="457" title="&lsquo;pre Procrustes 2&rsquo;" ></p>
+
+<p>Procrustes superimposition revolves around three features of shape extraction, that is invariance of landmark configurations to position, scale and rotation. There are a number of excelent textbooks about the mathematics and logic, as well as procedures for Procrustes superimposition (Bookstein, 1991, Dryden and Mardia, 1998, Zelditch et al., 2012), but for this post direct inspiration was <em>Morphometrics in R</em> (Claude, 2008), especially with the basic procedure presented in the following function definition.</p>
+
+<p>```r Partial Procrustes superimposition of two configurations</p>
+
+<p>def pProc(mat1, mat2):
+  k = mat1.shape[1]-1
+  m = mat1.shape[0]
+  sscaledMat1 = mat1 / centsize(mat1) #scaling and centering
+  sscaledMat2 = mat2 / centsize(mat2)
+  z1 = sscaledMat1 &ndash; [sscaledMat1[:,0].mean(), sscaledMat1[:,1].mean()]
+  z2 = sscaledMat2 &ndash; [sscaledMat2[:,0].mean(), sscaledMat2[:,1].mean()]
+  tempSv = np.dot(np.transpose(z2), z1) #rotation
+  svdMat = np.linalg.svd(tempSv)
+  U = svdMat[0]
+  V = svdMat[2]
+  Ds = svdMat[1]
+  tempSig = np.linalg.det(np.dot(np.transpose(z1), z2))
+  sig = np.sign(tempSig)
+  Ds[k] = sig * np.absolute(Ds[k])
+  U[:,k] = sig * U[:,k]
+  Gam = np.dot(V, np.transpose(U))
+  beta = np.sum(Ds)
+  pmat1 = np.dot(z1, Gam)
+  pmat2 = z2
+  tempRot = vstack((pmat1, pmat2))
+  rotatedMat = pd.DataFrame(tempRot, columns = [&lsquo;x&rsquo;,&lsquo;y&rsquo;])
+  return rotatedMat
+<code>``
+Plot of the superimposed configurations reveals that the Procrustes python was really able to force monsters</code> shape be more similar, removing the effects of orientation, size and rotation.</p>
+
+<p>```r Plot of the superimposed configurations</p>
+
+<p>rotatedMon = pProc(monster1, monster2)
+rotatedMon1 = np.array(rotatedMon[:10])
+rotatedMon2 = np.array(rotatedMon[10:20])</p>
+
+<p>plt.scatter(rotatedMon1[:,0], rotatedMon1[:,1], s = 80, c = &ldquo;#FFD200&rdquo;, edgecolors = &lsquo;none&rsquo;, label = &ldquo;super monster1&rdquo;)
+plt.plot(rotatedMon1[:,0], rotatedMon1[:,1], &lsquo;&mdash;&rsquo;, color = &ldquo;#FFD200&rdquo;)
+plt.scatter(rotatedMon2[:,0], rotatedMon2[:,1], s = 80, c = &ldquo;#47BFDD&rdquo;, edgecolors = &lsquo;none&rsquo;, label = &ldquo;super monster2&rdquo;)
+plt.plot(rotatedMon2[:,0], rotatedMon2[:,1], &lsquo;&mdash;&rsquo;, color = &ldquo;#47BFDD&rdquo;)</p>
+
+<p>meanRotMon = (rotatedMon1 + rotatedMon2) / 2
+plt.scatter(meanRotMon[:,0], meanRotMon[:,1], s = 90, c = &ldquo;#6a12c4&rdquo;, edgecolors = &lsquo;none&rsquo;, label = &ldquo;super mean monster&rdquo;)
+plt.plot(meanRotMon[:,0], meanRotMon[:,1], &lsquo;&ndash;&rsquo;, color = &ldquo;#6a12c4&rdquo;)</p>
+
+<p>labelsRot = [&lsquo;Landmark {0}&rsquo;.format(i) for i in range(10)]
+for label, x, y in zip(labelsRot, meanRotMon[:,0], meanRotMon[:,1]): #annotate mean landmarks by numbers
+  plt.annotate(label, xy = (x, y+0.01), ha = &lsquo;right&rsquo;, va = &lsquo;bottom&rsquo;)</p>
+
+<p>plt.grid()
+plt.legend(loc = &ldquo;lower left&rdquo;)
+```</p>
+
+<p><img class="center" src="/images/example1Proc.png" width="616" height="454" title="&lsquo;Procrustes monster&rsquo;" >
+<img class="center" src="/images/example2Proc.png" width="616" height="452" title="&lsquo;Procrustes monster 2&rsquo;" ></p>
+
+<p>Following posts should continue on this one and describe how the partial Procrustes superimposition for multilple configurations can be performed with fabulous sientific python.</p>
+
+<div id="disqus_thread"></div>
+
+
+<script type="text/javascript">
+/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+var disqus_shortname = 'creativemorphometrics'; // required: replace example with your forum shortname
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+
+
+<p><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[R Generator and a Colorful PCA]]></title>
@@ -103,24 +243,6 @@ pcaplot
 <p><img class="center" src="/images/pcaplot.png" width="616" height="466" title="&lsquo;PCA&rsquo;" ></p>
 
 <p>The plot indicates very little differentiation between the populations, but I guess that`s well expected since so much randomness is at hand.</p>
-
-<div id="disqus_thread"></div>
-
-
-<script type="text/javascript">
-/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
-var disqus_shortname = 'creativemorphometrics'; // required: replace example with your forum shortname
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script>
-
-
-<p><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></p>
 ]]></content>
   </entry>
   

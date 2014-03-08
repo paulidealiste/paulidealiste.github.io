@@ -4,7 +4,7 @@
   <title><![CDATA[Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-02-23T23:31:43+01:00</updated>
+  <updated>2014-03-08T19:39:01+01:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -12,6 +12,229 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Python Forcing Monsters` Shape]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/03/08/python-forcing-monsters%60-shape/"/>
+    <updated>2014-03-08T11:49:21+01:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/03/08/python-forcing-monsters`-shape</id>
+    <content type="html"><![CDATA[<p>Continuing on one of the previous posts about data generation in python, next natural step in the analytic procedure is the Procrustes superimposition. Since this procedure enables direct analyses of configurations` shape, and all subsequent explorative visualizations, it must be employed first. This post concerns with the basic superimposition procedure, involving only two landmark configurations, i.e. two generated monsters. One monster will be used as a reference and one as a target, which should undergo superimposition. First steps in data genration are the same as before, with the exception of polarRotator function that can take any numpy array and reorder it according to polar rotation angle. This is very useful since generated landmarks are not ordered properly and do not &ldquo;feel natural&rdquo; in plots and analyses.</p>
+
+<figure class='code'><figcaption><span>Library import, data generation and some functions</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>import numpy as np
+</span><span class='line'>import pandas as pd
+</span><span class='line'>import matplotlib.pyplot as plt
+</span><span class='line'>
+</span><span class='line'>def centsize<span class="p">(</span>M<span class="p">)</span><span class="o">:</span>   <span class="c1">#centroid size of any configuration matrix</span>
+</span><span class='line'>  p <span class="o">=</span> M.shape<span class="p">[</span><span class="m">0</span><span class="p">]</span>
+</span><span class='line'>  csize <span class="o">=</span> np.sqrt<span class="p">(</span>np.sum<span class="p">(</span>M.var<span class="p">(</span><span class="m">0</span><span class="p">))</span><span class="o">*</span><span class="p">(</span>p<span class="m">-1</span><span class="p">))</span>
+</span><span class='line'>  <span class="kr">return</span> csize
+</span><span class='line'>
+</span><span class='line'>def polarRotator<span class="p">(</span>M<span class="p">)</span><span class="o">:</span>   <span class="c1">#polar rotation for natural ordering of landmarks</span>
+</span><span class='line'>  x <span class="o">=</span> np.array<span class="p">(</span>M<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">])</span>
+</span><span class='line'>  y <span class="o">=</span> np.array<span class="p">(</span>M<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">])</span>
+</span><span class='line'>  points <span class="o">=</span> np.array<span class="p">((</span>x<span class="p">,</span>y<span class="p">))</span>.T
+</span><span class='line'>  cent <span class="o">=</span> <span class="p">(</span>np.sum<span class="p">(</span>x<span class="p">)</span><span class="o">/</span>len<span class="p">(</span>M<span class="p">),</span> np.sum<span class="p">(</span>y<span class="p">)</span><span class="o">/</span>len<span class="p">(</span>M<span class="p">))</span>
+</span><span class='line'>  angle <span class="o">=</span> np.arctan2<span class="p">(</span>points<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">]</span><span class="o">-</span>cent<span class="p">[</span><span class="m">1</span><span class="p">],</span>points<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">]</span><span class="o">-</span>cent<span class="p">[</span><span class="m">0</span><span class="p">])</span>
+</span><span class='line'>  points <span class="o">=</span> pd.DataFrame<span class="p">(</span>points<span class="p">,</span> columns <span class="o">=</span> <span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
+</span><span class='line'>  angle <span class="o">=</span> pd.Series<span class="p">(</span>angle<span class="p">)</span>
+</span><span class='line'>  points<span class="p">[</span><span class="s">&#39;angle&#39;</span><span class="p">]</span> <span class="o">=</span> angle
+</span><span class='line'>  points <span class="o">=</span> points.sort<span class="p">(</span><span class="s">&#39;angle&#39;</span><span class="p">)</span>
+</span><span class='line'>  rotatedMat <span class="o">=</span> np.array<span class="p">(</span>points<span class="p">[[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">]])</span>
+</span><span class='line'>  <span class="kr">return</span> rotatedMat
+</span><span class='line'>
+</span><span class='line'>coordstest <span class="o">=</span> np.vstack<span class="p">([</span>np.random.uniform<span class="p">(</span><span class="m">175</span><span class="p">,</span> <span class="m">220</span><span class="p">,</span> <span class="m">10</span><span class="p">),</span> np.random.uniform<span class="p">(</span><span class="m">175</span><span class="p">,</span> <span class="m">220</span><span class="p">,</span> <span class="m">10</span><span class="p">)])</span>.T
+</span><span class='line'>monster1 <span class="o">=</span> np.vstack<span class="p">([</span>np.random.multivariate_normal<span class="p">(</span>coordstest<span class="p">[</span>i<span class="p">,</span><span class="o">:</span><span class="p">],</span> <span class="p">[[</span><span class="m">3</span><span class="p">,</span><span class="m">0</span><span class="p">],[</span><span class="m">0</span><span class="p">,</span><span class="m">3</span><span class="p">]],</span> <span class="m">1</span><span class="p">)</span> <span class="kr">for</span> i <span class="kr">in</span> range<span class="p">(</span><span class="m">10</span><span class="p">)])</span>
+</span><span class='line'>monster2 <span class="o">=</span> np.vstack<span class="p">([</span>np.random.multivariate_normal<span class="p">(</span>coordstest<span class="p">[</span>i<span class="p">,</span><span class="o">:</span><span class="p">],</span> <span class="p">[[</span><span class="m">3</span><span class="p">,</span><span class="m">0</span><span class="p">],[</span><span class="m">0</span><span class="p">,</span><span class="m">3</span><span class="p">]],</span> <span class="m">1</span><span class="p">)</span> <span class="kr">for</span> i <span class="kr">in</span> range<span class="p">(</span><span class="m">10</span><span class="p">)])</span>
+</span><span class='line'>
+</span><span class='line'>monster1 <span class="o">=</span> polarRotator<span class="p">(</span>monster1<span class="p">)</span>
+</span><span class='line'>monster2 <span class="o">=</span> polarRotator<span class="p">(</span>monster2<span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The plot of configurations reveals their spatial relationship, as well as the general mean shape. This time, since landmarks are ordered properly, one line would be enough for representing mean shapes, and shapes of respective configurations.</p>
+
+<figure class='code'><figcaption><span>Plotting the original monsters</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>plt.scatter<span class="p">(</span>monster1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> monster1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">],</span> s <span class="o">=</span> <span class="m">80</span><span class="p">,</span> c <span class="o">=</span> <span class="s">&quot;#FFD200&quot;</span><span class="p">,</span> edgecolors <span class="o">=</span> <span class="s">&#39;none&#39;</span><span class="p">,</span> label <span class="o">=</span> <span class="s">&quot;monster1&quot;</span><span class="p">)</span>
+</span><span class='line'>plt.plot<span class="p">(</span>monster1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> monster1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">],</span> <span class="s">&#39;--&#39;</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;#FFD200&quot;</span><span class="p">)</span>
+</span><span class='line'>plt.scatter<span class="p">(</span>monster2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> monster2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">],</span> s <span class="o">=</span> <span class="m">80</span><span class="p">,</span> c <span class="o">=</span> <span class="s">&quot;#47BFDD&quot;</span><span class="p">,</span> edgecolors <span class="o">=</span> <span class="s">&#39;none&#39;</span><span class="p">,</span> label <span class="o">=</span> <span class="s">&quot;monster2&quot;</span><span class="p">)</span>
+</span><span class='line'>plt.plot<span class="p">(</span>monster2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> monster2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">],</span> <span class="s">&#39;--&#39;</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;#47BFDD&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>meanMon <span class="o">=</span> <span class="p">(</span>monster1 <span class="o">+</span> monster2<span class="p">)</span> <span class="o">/</span> <span class="m">2</span> <span class="c1">#calculate mean shape</span>
+</span><span class='line'>plt.scatter<span class="p">(</span>meanMon<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> meanMon<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">],</span> s <span class="o">=</span> <span class="m">90</span><span class="p">,</span> c <span class="o">=</span> <span class="s">&quot;#6a12c4&quot;</span><span class="p">,</span> edgecolors <span class="o">=</span> <span class="s">&#39;none&#39;</span><span class="p">,</span> label <span class="o">=</span> <span class="s">&quot;mean monster&quot;</span><span class="p">)</span>
+</span><span class='line'>plt.plot<span class="p">(</span>meanMon<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> meanMon<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;#6a12c4&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>labels <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Landmark {0}&#39;</span>.format<span class="p">(</span>i<span class="p">)</span> <span class="kr">for</span> i <span class="kr">in</span> range<span class="p">(</span><span class="m">10</span><span class="p">)]</span>
+</span><span class='line'><span class="kr">for</span> label<span class="p">,</span> x<span class="p">,</span> y <span class="kr">in</span> zip<span class="p">(</span>labels<span class="p">,</span> meanMon<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> meanMon<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">])</span><span class="o">:</span> <span class="c1">#annotate mean landmarks by numbers</span>
+</span><span class='line'>  plt.annotate<span class="p">(</span>label<span class="p">,</span> xy <span class="o">=</span> <span class="p">(</span>x<span class="p">,</span> y<span class="m">+0.3</span><span class="p">),</span> ha <span class="o">=</span> <span class="s">&#39;right&#39;</span><span class="p">,</span> va <span class="o">=</span> <span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>plt.grid<span class="p">()</span>
+</span><span class='line'>plt.legend<span class="p">(</span>loc <span class="o">=</span> <span class="s">&quot;lower left&quot;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="http://paulidealiste.github.io/images/example1preProc.png" width="616" height="462" title="'pre Procrustes 1'" >
+<img class="center" src="http://paulidealiste.github.io/images/example2preProc.png" width="616" height="457" title="'pre Procrustes 2'" ></p>
+
+<p>Procrustes superimposition revolves around three features of shape extraction, that is invariance of landmark configurations to position, scale and rotation. There are a number of excelent textbooks about the mathematics and logic, as well as procedures for Procrustes superimposition (Bookstein, 1991, Dryden and Mardia, 1998, Zelditch et al., 2012), but for this post direct inspiration was <em>Morphometrics in R</em> (Claude, 2008), especially with the basic procedure presented in the following function definition.</p>
+
+<figure class='code'><figcaption><span>Partial Procrustes superimposition of two configurations</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>def pProc<span class="p">(</span>mat1<span class="p">,</span> mat2<span class="p">)</span><span class="o">:</span>
+</span><span class='line'>  k <span class="o">=</span> mat1.shape<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="m">-1</span>
+</span><span class='line'>  m <span class="o">=</span> mat1.shape<span class="p">[</span><span class="m">0</span><span class="p">]</span>
+</span><span class='line'>  sscaledMat1 <span class="o">=</span> mat1 <span class="o">/</span> centsize<span class="p">(</span>mat1<span class="p">)</span> <span class="c1">#scaling and centering</span>
+</span><span class='line'>  sscaledMat2 <span class="o">=</span> mat2 <span class="o">/</span> centsize<span class="p">(</span>mat2<span class="p">)</span>
+</span><span class='line'>  z1 <span class="o">=</span> sscaledMat1 <span class="o">-</span> <span class="p">[</span>sscaledMat1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">]</span>.mean<span class="p">(),</span> sscaledMat1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">]</span>.mean<span class="p">()]</span>
+</span><span class='line'>  z2 <span class="o">=</span> sscaledMat2 <span class="o">-</span> <span class="p">[</span>sscaledMat2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">]</span>.mean<span class="p">(),</span> sscaledMat2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">]</span>.mean<span class="p">()]</span>
+</span><span class='line'>  tempSv <span class="o">=</span> np.dot<span class="p">(</span>np.transpose<span class="p">(</span>z2<span class="p">),</span> z1<span class="p">)</span> <span class="c1">#rotation</span>
+</span><span class='line'>  svdMat <span class="o">=</span> np.linalg.svd<span class="p">(</span>tempSv<span class="p">)</span>
+</span><span class='line'>  U <span class="o">=</span> svdMat<span class="p">[</span><span class="m">0</span><span class="p">]</span>
+</span><span class='line'>  V <span class="o">=</span> svdMat<span class="p">[</span><span class="m">2</span><span class="p">]</span>
+</span><span class='line'>  Ds <span class="o">=</span> svdMat<span class="p">[</span><span class="m">1</span><span class="p">]</span>
+</span><span class='line'>  tempSig <span class="o">=</span> np.linalg.det<span class="p">(</span>np.dot<span class="p">(</span>np.transpose<span class="p">(</span>z1<span class="p">),</span> z2<span class="p">))</span>
+</span><span class='line'>  sig <span class="o">=</span> np.sign<span class="p">(</span>tempSig<span class="p">)</span>
+</span><span class='line'>  Ds<span class="p">[</span>k<span class="p">]</span> <span class="o">=</span> sig <span class="o">*</span> np.absolute<span class="p">(</span>Ds<span class="p">[</span>k<span class="p">])</span>
+</span><span class='line'>  U<span class="p">[</span><span class="o">:</span><span class="p">,</span>k<span class="p">]</span> <span class="o">=</span> sig <span class="o">*</span> U<span class="p">[</span><span class="o">:</span><span class="p">,</span>k<span class="p">]</span>
+</span><span class='line'>  Gam <span class="o">=</span> np.dot<span class="p">(</span>V<span class="p">,</span> np.transpose<span class="p">(</span>U<span class="p">))</span>
+</span><span class='line'>  beta <span class="o">=</span> np.sum<span class="p">(</span>Ds<span class="p">)</span>
+</span><span class='line'>  pmat1 <span class="o">=</span> np.dot<span class="p">(</span>z1<span class="p">,</span> Gam<span class="p">)</span>
+</span><span class='line'>  pmat2 <span class="o">=</span> z2
+</span><span class='line'>  tempRot <span class="o">=</span> vstack<span class="p">((</span>pmat1<span class="p">,</span> pmat2<span class="p">))</span>
+</span><span class='line'>  rotatedMat <span class="o">=</span> pd.DataFrame<span class="p">(</span>tempRot<span class="p">,</span> columns <span class="o">=</span> <span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
+</span><span class='line'>  <span class="kr">return</span> rotatedMat
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Plot of the superimposed configurations reveals that the Procrustes python was really able to force monsters` shape be more similar, removing the effects of orientation, size and rotation.</p>
+
+<figure class='code'><figcaption><span>Plot of the superimposed configurations</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>rotatedMon <span class="o">=</span> pProc<span class="p">(</span>monster1<span class="p">,</span> monster2<span class="p">)</span>
+</span><span class='line'>rotatedMon1 <span class="o">=</span> np.array<span class="p">(</span>rotatedMon<span class="p">[</span><span class="o">:</span><span class="m">10</span><span class="p">])</span>
+</span><span class='line'>rotatedMon2 <span class="o">=</span> np.array<span class="p">(</span>rotatedMon<span class="p">[</span><span class="m">10</span><span class="o">:</span><span class="m">20</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'>plt.scatter<span class="p">(</span>rotatedMon1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> rotatedMon1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">],</span> s <span class="o">=</span> <span class="m">80</span><span class="p">,</span> c <span class="o">=</span> <span class="s">&quot;#FFD200&quot;</span><span class="p">,</span> edgecolors <span class="o">=</span> <span class="s">&#39;none&#39;</span><span class="p">,</span> label <span class="o">=</span> <span class="s">&quot;super monster1&quot;</span><span class="p">)</span>
+</span><span class='line'>plt.plot<span class="p">(</span>rotatedMon1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> rotatedMon1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">],</span> <span class="s">&#39;--&#39;</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;#FFD200&quot;</span><span class="p">)</span>
+</span><span class='line'>plt.scatter<span class="p">(</span>rotatedMon2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> rotatedMon2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">],</span> s <span class="o">=</span> <span class="m">80</span><span class="p">,</span> c <span class="o">=</span> <span class="s">&quot;#47BFDD&quot;</span><span class="p">,</span> edgecolors <span class="o">=</span> <span class="s">&#39;none&#39;</span><span class="p">,</span> label <span class="o">=</span> <span class="s">&quot;super monster2&quot;</span><span class="p">)</span>
+</span><span class='line'>plt.plot<span class="p">(</span>rotatedMon2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> rotatedMon2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">],</span> <span class="s">&#39;--&#39;</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;#47BFDD&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>meanRotMon <span class="o">=</span> <span class="p">(</span>rotatedMon1 <span class="o">+</span> rotatedMon2<span class="p">)</span> <span class="o">/</span> <span class="m">2</span>
+</span><span class='line'>plt.scatter<span class="p">(</span>meanRotMon<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> meanRotMon<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">],</span> s <span class="o">=</span> <span class="m">90</span><span class="p">,</span> c <span class="o">=</span> <span class="s">&quot;#6a12c4&quot;</span><span class="p">,</span> edgecolors <span class="o">=</span> <span class="s">&#39;none&#39;</span><span class="p">,</span> label <span class="o">=</span> <span class="s">&quot;super mean monster&quot;</span><span class="p">)</span>
+</span><span class='line'>plt.plot<span class="p">(</span>meanRotMon<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> meanRotMon<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;#6a12c4&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>labelsRot <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Landmark {0}&#39;</span>.format<span class="p">(</span>i<span class="p">)</span> <span class="kr">for</span> i <span class="kr">in</span> range<span class="p">(</span><span class="m">10</span><span class="p">)]</span>
+</span><span class='line'><span class="kr">for</span> label<span class="p">,</span> x<span class="p">,</span> y <span class="kr">in</span> zip<span class="p">(</span>labelsRot<span class="p">,</span> meanRotMon<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">],</span> meanRotMon<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">])</span><span class="o">:</span> <span class="c1">#annotate mean landmarks by numbers</span>
+</span><span class='line'>  plt.annotate<span class="p">(</span>label<span class="p">,</span> xy <span class="o">=</span> <span class="p">(</span>x<span class="p">,</span> y<span class="m">+0.01</span><span class="p">),</span> ha <span class="o">=</span> <span class="s">&#39;right&#39;</span><span class="p">,</span> va <span class="o">=</span> <span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>plt.grid<span class="p">()</span>
+</span><span class='line'>plt.legend<span class="p">(</span>loc <span class="o">=</span> <span class="s">&quot;lower left&quot;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="http://paulidealiste.github.io/images/example1Proc.png" width="616" height="454" title="'Procrustes monster'" >
+<img class="center" src="http://paulidealiste.github.io/images/example2Proc.png" width="616" height="452" title="'Procrustes monster 2'" ></p>
+
+<p>Following posts should continue on this one and describe how the partial Procrustes superimposition for multilple configurations can be performed with fabulous sientific python.</p>
+
+<div id="disqus_thread"></div>
+
+
+<script type="text/javascript">
+/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+var disqus_shortname = 'creativemorphometrics'; // required: replace example with your forum shortname
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+
+
+<p><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[R Generator and a Colorful PCA]]></title>
@@ -158,24 +381,6 @@
 <p><img class="center" src="http://paulidealiste.github.io/images/pcaplot.png" width="616" height="466" title="'PCA'" ></p>
 
 <p>The plot indicates very little differentiation between the populations, but I guess that`s well expected since so much randomness is at hand.</p>
-
-<div id="disqus_thread"></div>
-
-
-<script type="text/javascript">
-/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
-var disqus_shortname = 'creativemorphometrics'; // required: replace example with your forum shortname
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script>
-
-
-<p><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></p>
 ]]></content>
   </entry>
   
