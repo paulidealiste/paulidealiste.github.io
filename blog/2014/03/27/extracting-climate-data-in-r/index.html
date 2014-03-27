@@ -1,0 +1,382 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Extracting Climate Data in R - Creative morphometrics</title>
+  <meta name="author" content="Miloš Blagojević">
+
+  
+  <meta name="description" content="This post shows how to extract certain climate data from any GeoTiff database.">
+
+  <meta name="keywords" content="raster, climate data, GIS">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://paulidealiste.github.io/blog/2014/03/27/extracting-climate-data-in-r">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Creative morphometrics" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Creative morphometrics</a></h1>
+  
+    <h2>Using R and python for colorful research of biological shape</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:paulidealiste.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/software">Software</a></li>
+  <li><a href="/about">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Extracting Climate Data in R</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-27T19:44:55+01:00" pubdate data-updated="true">Mar 27<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>With the ongoing expand of the available geospatial databases in raster format (GeoTiff) it is getting easier to analyse the relationship between any complex morphology, captured in landmark data, and i.e. climate or precipitation data with the help of partial least squares (PLS). R has a wonderful <em>raser</em>, <em>sp</em> and <em>gdal</em> packages that facilitate the extraction of the geospatial data from GeoTiff raster grids. In this post the geoTiff used will be from the <a href="http://www.worldclim.org/" target="_blank">WorldClim</a> website, and the climate data for European square 16, where some of my real samples originate from. In order to get this data you can follow the downloads section of the WorldClim website and choose download data by tile, 30 arc-seconds resolution. When a map opens the dataset for this post would be under the map, when clicked on the square zone 16 and finally download the Mean Temperature. This is a .zip file with twelve GeoTiffs, one for each month. Unpack the files in a pre-destined directory, and declare this a working directory in the R session.</p>
+
+<figure class='code'><figcaption><span>Importing libraries, reading and inital plots of the GeoTiff data</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>setwd<span class="p">(</span><span class="s">&quot;~/tmean&quot;</span><span class="p">)</span> <span class="c1">#this is the folder with all the GeoTiffs</span>
+</span><span class='line'>library<span class="p">(</span>raster<span class="p">)</span>
+</span><span class='line'>library<span class="p">(</span>sp<span class="p">)</span>
+</span><span class='line'>library<span class="p">(</span>rgdal<span class="p">)</span>
+</span><span class='line'>meanJan <span class="o">&lt;-</span> raster<span class="p">(</span><span class="s">&quot;tmean1_16.tif&quot;</span><span class="p">)</span> <span class="c1">#mean temp for January etc.</span>
+</span><span class='line'>meanFeb <span class="o">&lt;-</span> raster<span class="p">(</span><span class="s">&quot;tmean2_16.tif&quot;</span><span class="p">)</span>
+</span><span class='line'>meanMar <span class="o">&lt;-</span> raster<span class="p">(</span><span class="s">&quot;tmean3_16.tif&quot;</span><span class="p">)</span>
+</span><span class='line'>meanApr <span class="o">&lt;-</span> raster<span class="p">(</span><span class="s">&quot;tmean4_16.tif&quot;</span><span class="p">)</span>
+</span><span class='line'>meanMaj <span class="o">&lt;-</span> raster<span class="p">(</span><span class="s">&quot;tmean5_16.tif&quot;</span><span class="p">)</span>
+</span><span class='line'>meanJun <span class="o">&lt;-</span> raster<span class="p">(</span><span class="s">&quot;tmean6_16.tif&quot;</span><span class="p">)</span>
+</span><span class='line'>meanJul <span class="o">&lt;-</span> raster<span class="p">(</span><span class="s">&quot;tmean7_16.tif&quot;</span><span class="p">)</span>
+</span><span class='line'>meanAvg <span class="o">&lt;-</span> raster<span class="p">(</span><span class="s">&quot;tmean8_16.tif&quot;</span><span class="p">)</span>
+</span><span class='line'>meanSep <span class="o">&lt;-</span> raster<span class="p">(</span><span class="s">&quot;tmean9_16.tif&quot;</span><span class="p">)</span>
+</span><span class='line'>meanOkt <span class="o">&lt;-</span> raster<span class="p">(</span><span class="s">&quot;tmean10_16.tif&quot;</span><span class="p">)</span>
+</span><span class='line'>meanNov <span class="o">&lt;-</span> raster<span class="p">(</span><span class="s">&quot;tmean11_16.tif&quot;</span><span class="p">)</span>
+</span><span class='line'>meanDec <span class="o">&lt;-</span> raster<span class="p">(</span><span class="s">&quot;tmean12_16.tif&quot;</span><span class="p">)</span>
+</span><span class='line'>plot<span class="p">(</span>meanJan<span class="p">)</span> <span class="c1">#will simply get the basic R plot of a GeoTiff raster</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>
+<img class="center" src="/images/meanJan.png" width="521" height="410" title="'mean january'" ></p>
+
+<p>After reading in the basic data, <em>raster</em> package offers several formats in which to keep the data, besides the basic raster. The most useful one is a raster stack which really is just the piled-up rasters that can be manipulated together. Also one useful visual help is the addition of the country boundaries followed by zooming in to the extent of the country or region where the samples originate from. Country boundaries .shp files is freely avalilable from <a href="http://thematicmapping.org/downloads/world_borders.php" target="_blank">thematicmapping</a>. When downloaded they should be in the same directory as the GeoTiffs.</p>
+
+<figure class='code'><figcaption><span>Creating the raster stack, adding boundaries and zooming to an extent</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>mtStack <span class="o">&lt;-</span> stack<span class="p">(</span>meanJan<span class="p">,</span> meanFeb<span class="p">,</span> meanMar<span class="p">,</span> meanApr<span class="p">,</span> meanMaj<span class="p">,</span> meanJun<span class="p">,</span> meanJul<span class="p">,</span> meanAvg<span class="p">,</span> meanSep<span class="p">,</span> meanOkt<span class="p">,</span> meanNov<span class="p">,</span> meanDec<span class="p">)</span>
+</span><span class='line'>bounds <span class="o">&lt;-</span> readOGR<span class="p">(</span>dsn<span class="o">=</span>getwd<span class="p">(),</span> layer<span class="o">=</span> <span class="s">&quot;TM_WORLD_BORDERS-0.3&quot;</span><span class="p">)</span> <span class="c1">#import borders</span>
+</span><span class='line'>plot<span class="p">(</span>meanJan<span class="p">)</span> <span class="c1">#plot the raster file for any month</span>
+</span><span class='line'>extentR <span class="o">&lt;-</span> drawExtent<span class="p">()</span>
+</span><span class='line'><span class="c1">#drawExtent enters the interactive mode where you can draw the polygon for zooming based on two points, top right and lower left</span>
+</span><span class='line'><span class="c1">#values in extentR are coordinates in WGS84 datum and expressed as longitude data</span>
+</span><span class='line'>plot<span class="p">(</span>zoom<span class="p">(</span>bounds<span class="p">,</span> extentR<span class="p">),</span> add <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>
+</span><span class='line'><span class="c1">#unfortunately this does not work well since it will plot the bounds in the zoom extent</span>
+</span><span class='line'><span class="c1">#and if the both raster and bounds are needed then it might be ok to overlap them in GIMP</span>
+</span><span class='line'>plot<span class="p">(</span>zoom<span class="p">(</span>meanJan<span class="p">,</span> extentR<span class="p">),</span> add <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="/images/zoomara.png" width="519" height="414" title="'mean january zoomed'" ></p>
+
+<p>Before final extraction of the climate data it can be useful to plot each month`s mean temperature for the selected extent of the rasater. This can be easily achieved by using the <em>rasterVis</em> package levelplot and the extentR variable, which can be used to cut through all raster layers in the stack.</p>
+
+<figure class='code'><figcaption><span>Cutting the stack and drawing levelplot for all months</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>library<span class="p">(</span>rasterVis<span class="p">)</span>
+</span><span class='line'>cutStack <span class="o">&lt;-</span> <span class="p">(</span>crop<span class="p">(</span>mtStack<span class="p">,</span> extentR<span class="p">))</span><span class="o">/</span><span class="m">10</span>
+</span><span class='line'><span class="c1">#division by 10 is needed since the temperature data in this GeoTiff is x10 for saving memory-important</span>
+</span><span class='line'>names<span class="p">(</span>cutStack<span class="p">)</span> <span class="o">&lt;-</span> month.abb
+</span><span class='line'>levelplot<span class="p">(</span>cutStack<span class="p">)</span> <span class="c1">#may take long time to plot</span>
+</span><span class='line'>histogram<span class="p">(</span>cutStack<span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="/images/meanLevel1.png" width="570" height="467" title="'mean all'" >
+<img class="center" src="/images/meanLevel2.png" width="570" height="467" title="'mean all h'" ></p>
+
+<p>Slightly more efficient than the drawExtent is the spatialPolygons function from the <em>sp</em> package that will be used for definition of the real sampling localities, by simply drawing boundaries of the localities by hand or using the known positional data. It is best if approximate latitude/longitude coordinates are known in advance so that the defining polygon can be drawn connecting several corners-points, that form the broader sampling area border. If coordinates are not known in advance then the drawExtent should be used first for finding the latitude/longitude of the spatial polygon points, and then making the SpatialPolygon object out of them, as described next.</p>
+
+<figure class='code'><figcaption><span>Extracting spatialPolygons by latitude/longitude pairs </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>taraCoord <span class="o">&lt;-</span> rbind<span class="p">(</span>c<span class="p">(</span><span class="m">19.241867</span><span class="p">,</span> <span class="m">44.012571</span><span class="p">),</span> c<span class="p">(</span><span class="m">19.351730</span><span class="p">,</span> <span class="m">43.976511</span><span class="p">),</span> c<span class="p">(</span><span class="m">19.518585</span><span class="p">,</span> <span class="m">43.923121</span><span class="p">),</span> c<span class="p">(</span><span class="m">19.435501</span><span class="p">,</span> <span class="m">43.894924</span><span class="p">),</span> c<span class="p">(</span><span class="m">19.317398</span><span class="p">,</span> <span class="m">43.896903</span><span class="p">),</span> c<span class="p">(</span><span class="m">19.261780</span><span class="p">,</span> <span class="m">43.955259</span><span class="p">),</span> c<span class="p">(</span><span class="m">19.241867</span><span class="p">,</span> <span class="m">44.012571</span><span class="p">))</span>
+</span><span class='line'>R1Coord <span class="o">&lt;-</span> rbind<span class="p">(</span>c<span class="p">(</span><span class="m">24.656067</span><span class="p">,</span> <span class="m">45.627484</span><span class="p">),</span> c<span class="p">(</span><span class="m">25.252075</span><span class="p">,</span> <span class="m">45.575600</span><span class="p">),</span> c<span class="p">(</span><span class="m">25.628357</span><span class="p">,</span> <span class="m">45.525592</span><span class="p">),</span> c<span class="p">(</span><span class="m">25.488281</span><span class="p">,</span> <span class="m">45.3000007</span><span class="p">),</span> c<span class="p">(</span><span class="m">25.046082</span><span class="p">,</span> <span class="m">45.381080</span><span class="p">),</span> c<span class="p">(</span><span class="m">24.672546</span><span class="p">,</span> <span class="m">45.539060</span><span class="p">),</span> c<span class="p">(</span><span class="m">24.656067</span><span class="p">,</span> <span class="m">45.627484</span><span class="p">))</span>
+</span><span class='line'><span class="c1">#these objects are matrices with two columns, one for latitude of a polygon corner and the other the longitude</span>
+</span><span class='line'>polyTara <span class="o">&lt;-</span> SpatialPolygons<span class="p">(</span>list<span class="p">(</span>Polygons<span class="p">(</span>list<span class="p">(</span>Polygon<span class="p">(</span>taraCoord<span class="p">)),</span> <span class="m">1</span><span class="p">)))</span> <span class="c1">#declare object type</span>
+</span><span class='line'>polyR1 <span class="o">&lt;-</span> SpatialPolygons<span class="p">(</span>list<span class="p">(</span>Polygons<span class="p">(</span>list<span class="p">(</span>Polygon<span class="p">(</span>R1Coord<span class="p">)),</span> <span class="m">1</span><span class="p">)))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After all spatial polygons are defined, final step involves the extraction of the mean temperature values from the points encircled by the polygon in question, for all months. Since GeoTiffs are raster formats, they are carrying the information on the temperature in the points of the bitmap grid, so if the polygon is too small, small will be the number of the grid-points inside, maybe smaller than the number of individuals. To avoid this make sampling area broader, and in this case polyTara has some 220 individual grid points inside, which means 220 values for the mean temperature in the area. If we have i.e. ten individuals per population it is necessery to have also 10 mean temperature values, so that both blocks in subsequent PLS would have same dimensionality. R`s basic sample function can be used to extract random values from the i.e. 220 points within the population (Tara and R1) polygons. This simulates random sampling of individuals from the sampling locality and after that any analysis can be done, from linear models to PLS, which will be shown in future posts.</p>
+
+<figure class='code'><figcaption><span>Extracting climate data and preparing the dataset according to the number of individuals</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>matTaraMean <span class="o">&lt;-</span> extract<span class="p">(</span>cutStack<span class="p">,</span> polyTara<span class="p">)[[</span><span class="m">1</span><span class="p">]]</span>
+</span><span class='line'>matR1Mean <span class="o">&lt;-</span> extract<span class="p">(</span>cutStack<span class="p">,</span> polyR1<span class="p">)[[</span><span class="m">1</span><span class="p">]]</span>
+</span><span class='line'>plot<span class="p">(</span>cutStack<span class="o">$</span>Jan<span class="p">)</span>
+</span><span class='line'>plot<span class="p">(</span>polyTara<span class="p">,</span> add <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>
+</span><span class='line'>plot<span class="p">(</span>polyR1<span class="p">,</span> add <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span>
+</span><span class='line'>n <span class="o">&lt;-</span> dim<span class="p">(</span>matTaraMean<span class="p">)[</span><span class="m">1</span><span class="p">]</span> <span class="c1">#for sampling convenience</span>
+</span><span class='line'>m <span class="o">&lt;-</span> dim<span class="p">(</span>matR1Mean<span class="p">)[</span><span class="m">1</span><span class="p">]</span>
+</span><span class='line'>taraMat <span class="o">&lt;-</span> matTaraMean<span class="p">[</span>sample<span class="p">(</span>n<span class="p">,</span> <span class="m">10</span><span class="p">),]</span> <span class="c1">#this is the final extracted data</span>
+</span><span class='line'>R1Mat <span class="o">&lt;-</span> matR1Mean<span class="p">[</span>sample<span class="p">(</span>m<span class="p">,</span> <span class="m">10</span><span class="p">),]</span>
+</span><span class='line'>library<span class="p">(</span>ggplot2<span class="p">)</span>
+</span><span class='line'>library<span class="p">(</span>reshape2<span class="p">)</span>
+</span><span class='line'>plotter <span class="o">&lt;-</span> data.frame<span class="p">(</span>rbind<span class="p">(</span>taraMat<span class="p">,</span> R1Mat<span class="p">),</span> loc <span class="o">=</span> c<span class="p">(</span>rep<span class="p">(</span><span class="s">&quot;Ta&quot;</span><span class="p">,</span><span class="m">10</span><span class="p">),</span> rep<span class="p">(</span><span class="s">&quot;R1&quot;</span><span class="p">,</span> <span class="m">10</span><span class="p">)))</span> <span class="c1">#for ggplot2</span>
+</span><span class='line'>forplo <span class="o">&lt;-</span> melt<span class="p">(</span>plotter<span class="p">)</span>
+</span><span class='line'>m <span class="o">&lt;-</span> ggplot<span class="p">(</span>forplo<span class="p">,</span> aes<span class="p">(</span>x <span class="o">=</span> value<span class="p">,</span> fill <span class="o">=</span> loc<span class="p">))</span> <span class="o">+</span> geom_histogram<span class="p">()</span> <span class="o">+</span> facet_grid<span class="p">(</span>variable<span class="o">~</span>.<span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Figure 5. shows the locations of tara and R1 spatial polygons within the zoomed extent of the zone 16, while in Figure 6. barplots are shown for 10 random points for all months, and for both localities, for comparison.</p>
+
+<p><img class="center" src="/images/Fig5climate.png" width="536" height="433" title="'localities'" >
+<img class="center" src="/images/Fig6climate.png" width="802" height="700" title="'histograms'" ></p>
+
+<p>It is obvious that the Tara locality has higer mean monthly temperature, on average for every month, and also it has less temperature variaton than R1.</p>
+
+<div id="disqus_thread"></div>
+
+
+<script type="text/javascript">
+/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+var disqus_shortname = 'creativemorphometrics'; // required: replace example with your forum shortname
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+
+
+<p><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Miloš Blagojević</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-27T19:44:55+01:00" pubdate data-updated="true">Mar 27<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/r/'>R</a>, <a class='category' href='/blog/categories/utilities/'>utilities</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://paulidealiste.github.io/blog/2014/03/27/extracting-climate-data-in-r/" data-via="" data-counturl="http://paulidealiste.github.io/blog/2014/03/27/extracting-climate-data-in-r/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/03/08/python-forcing-monsters%60-shape/" title="Previous Post: Python forcing monsters` shape">&laquo; Python forcing monsters` shape</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <img class="center none" src="/images/roehead.png" width="207" height="347" title="'Roe deer'" >
+<center>I am an adventurer in the <font color = "#0099FF">wonderful world</font> of biological shape analysis. Mostly this blog includes posts about R and python routines for doing shape analyses and displaying beautiful results.</center>  
+<center>E-mail me at <a href="mailto:paulidealiste@gmail.com"><font color = "orange">paulidealiste@gmail.com</font></a></center><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/03/27/extracting-climate-data-in-r/">Extracting Climate Data in R</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/08/python-forcing-monsters%60-shape/">Python Forcing Monsters` Shape</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/23/r-generator-and-a-colorful-pca/">R Generator and a Colorful PCA</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/01/xy-outlines-in-gimp-and-imagej/">XY Outlines in GIMP and imageJ</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/17/simple-random-landmarks-in-python/">Random Landmark Monsters in Python</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Miloš Blagojević -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
