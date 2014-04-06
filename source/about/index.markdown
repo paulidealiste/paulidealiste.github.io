@@ -17,3 +17,6 @@ My email is **paulidealiste@gmail.com**
 This website was created using [Octopress](http://octopress.org/) a framework for [Jekyll](http://jekyllrb.com/) static site generator. This framework really eases the process of creating a basic website structure and lets the potential author concentrate on the content. It is mostly suited for a blog-like website, since the authoring of the posts is facilitated by using [Markdown](http://daringfireball.net/projects/markdown/), that is really a lightweight HTML, great for writing structured posts, with embedded multimedia, code blocks and comments.
 
 All comments and suggestions are wellcome.
+
+<script src="//platform.linkedin.com/in.js" type="text/javascript"></script>
+<script type="IN/MemberProfile" data-id="http://www.linkedin.com/in/milosblagojevic81" data-format="hover" data-text="Miloš Blagojević"></script>
