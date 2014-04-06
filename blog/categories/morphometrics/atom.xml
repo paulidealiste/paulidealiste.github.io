@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Morphometrics | Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/blog/categories/morphometrics/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-03-28T00:22:16+01:00</updated>
+  <updated>2014-04-06T15:57:22+02:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -12,6 +12,65 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Delaunay Triangulation Experiment]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/04/04/delaunay-triangulation-for-modularity-pt-1/"/>
+    <updated>2014-04-04T18:09:37+02:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/04/04/delaunay-triangulation-for-modularity-pt-1</id>
+    <content type="html"><![CDATA[<p>Since landmark data consists of x and y Cartesian coordinates, it would be useful if they could be represented by one summary number, that would preserve the spatial information. This is just a proposal of one possiblity using Delaunay triangulation between landmark configurations, and the average area of all triangles emanating from individual landmarks. Since landmark position within the triangulation grid would influence the shape and size as well as number of triangles around it, the area should preserve enoguh information about the spatial relationships of landmarks. Dataset for this post consists of ventral aspect half configurations from <a href="http://goo.gl/LP3xsd" target="_blank">here</a>. Delaunay triangulation will be performed using <em>deldir</em> R package, since it reports the mentioned triangle areas as a part of object summary.</p>
+
+<p>```r Importing data, basic GM, calculating the triangulation, extracting areas and plotting
+library(deldir)
+library(geomorph)
+load(&ldquo;capSample.RData&rdquo;)</p>
+
+<p>capreolusGPA &lt;&ndash; gpagen(capSample)
+capGPAcoords &lt;&ndash; capreolusGPA$coords</p>
+
+<p>delCap &lt;&ndash; deldir(capSample[,,10][,1], capSample[,,10][,2]) #extract any individual from an array for visualization
+plot(delCap, col=c(&ldquo;lightblue&rdquo;,&ldquo;lightgrey&rdquo;,1,1,1), lwd = c(2,2), xlim = c(150, 400), cex = 0.1, ann = FALSE)
+points(capSample[,,10], col = &ldquo;orange&rdquo;, pch = 16, cex = 1.4)
+text(capSample[,,10], label = c(1:16), pos = 3, ceo = 0.5)</p>
+
+<p>areaCap &lt;&ndash; t(apply(capGPAcoords, 3, function(A) deldir(A[,1],A[,2])$summary[,4])) #calcuate areas per landmark
+areaCap &lt;&ndash; data.frame(areaCap)
+names(areaCap) &lt;&ndash; paste(&ldquo;lm&rdquo;, c(1:16), sep = &ldquo;&rdquo;)
+```</p>
+
+<p><img class="center" src="/images/Delaunay.png" width="401" height="473" title="&lsquo;Delaunay&rsquo;" ></p>
+
+<p>Values in the areaCap matrix represent average areas of all triangles emanating from the landmark in question, so its dimensions are 60x16. Correlation matrix (16x16) can be calculated from the areaCap matrix, and it should reflect relative positioning of landmarks through spatial grouping pattern. This can be checked visually using <em>corrplot</em> package visualization of the correlation matrix, which allows direct assesment of emerging patterns in the matrix. Additionally, this package allows reordering of rows and columns according to hierarchical clustering algorhithms and representing the desired number of clusters with rectangles in the correlation plot. This can only be considered as an idea of general modularity, since landmarks from the same cranial region should be correlated more than distant landmarks. But the transformation of xy coordinates to average triangle areas may have introduced non-biological variation or obscured some of the natural variation and these procedures as well as subsequent analyses may be treated only as a fun experiment and visualization tool for now.</p>
+
+<p><code>r Drawing correlation plot
+library(corrplot)
+capCor &lt;- cor(areaCap)
+corrplot(capCor, method = "circle", tl.cex = 0.93, order = "hclust", addrect = 3)
+</code></p>
+
+<p><img class="center" src="/images/Corrplot.png" width="570" height="529" title="&lsquo;Delaunay&rsquo;" ></p>
+
+<p>Correlation plot with three proposed general landmark groups in the matrix reveals that the correlations are, on average, higher for locally grouped landmaks, especially the anterior ones, from 1 to 7. This can`t be used as a reliablie test for modularity hypothesis, but it can serve as a basis for further analyses based on construcing linked graphs or networks using correlation matrices from landmark data, where the xy coordinates are transformed to one number. Also this can be a useful way of representing modular structure visually, since both Delaunay and correlation plots are highly customizable, and can be colored according to real modularity hypotheses. Testing some of these will be the subject of future posts.</p>
+
+<div id="disqus_thread"></div>
+
+
+<script type="text/javascript">
+/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+var disqus_shortname = 'creativemorphometrics'; // required: replace example with your forum shortname
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+
+
+<p><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Python Forcing Monsters` Shape]]></title>
@@ -319,62 +378,6 @@ plt.grid()
 <img class="center" src="/images/FigMonster2.png" width="600" height="445" title="&lsquo;Second monster&rsquo;" ></p>
 
 <p>Generated &ldquo;monsters&rdquo; are just there to get the idea of a possible shape, although the create the impression of the &ldquo;outline&rdquo;, such that all landmarks are sampled from the outer perimeter of the object. The code presented would not be complete if it wasn`t for the help from people from stackoverflow (<a href="http://goo.gl/DWOCLJ">here</a>, <a href="http://goo.gl/y9Kpv3">here</a> and <a href="http://goo.gl/xwL4Dz">here</a>).</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Colorful Outlines for Shape Comparison]]></title>
-    <link href="http://paulidealiste.github.io/blog/2014/01/09/colorful-outlines-for-shape-comparison/"/>
-    <updated>2014-01-09T19:55:01+01:00</updated>
-    <id>http://paulidealiste.github.io/blog/2014/01/09/colorful-outlines-for-shape-comparison</id>
-    <content type="html"><![CDATA[<p>This procedure is based on the outlines generated from the digital photos using imageJ and converting imageJ images to x-y continuous outline data available from <a href="http://goo.gl/TYSzf0" target="_blank">here</a>. Its goal is to present a visual overview of global shape differences between roe deer (<em>Capreolus capreolus</em>) populations, using landmark data from ventral projection of their crania. All outlines are based on deformation via Thin Plate Splines, using mean shapes for populations as deformation targets and references. Superimposition methods as well as preliminary GM analyses were done in R and marvelous <em>geomorph</em> package by Dean Adams and Erik Otarola-Castillo. Additionally, since one of the common points of contemporary scientific research is the reproducibility of solutions offered all posts will also contain randomly generated sample data that could be used similarly to real-world datasets. Sample generation can be very useful, especially in teaching, so I intend to focus on it in future posts.</p>
-
-<p><code>r Importing libraries and generating the basic dataset (files should be placed in your working directory)
-library(geomorph)
-library(ggplot2)
-library(Morpho)
-d &lt;- read.table("ventralnoOutlineCap.txt") #outline data
-load("capreolusRgen.RData")
-capreolusArray &lt;- capreolusSample1 #or capreolusSample2-5
-</code>
-The workspace &ldquo;capreolusRgen.RData&rdquo; (which can be downloaded from <a href="http://goo.gl/4uKerX" target="_blank">here</a>) contains several randomly generated datasetes of 657 individuals and 28 landmarks, named &ldquo;capreolusSample#&rdquo;. These data was generated on the basis of real-world values, using the linear regression model to control random number generators. The code that was used probably does not repoduce the sampling of landmarks well, especially regarding correlations between pairs of landmark coordinates or the landmarks that conform to the object symmetry, but for the purpose of illustration in this post, I hope they should be fine.</p>
-
-<p><code>r Procrustes superimposition
-capreolusGPA &lt;- gpagen(capreolusArray, ShowPlot = FALSE)
-pop &lt;- sample(3, 657, replace = TRUE) #generate random 3 population partition
-pop[which(pop == 1)] &lt;- "pop1"
-pop[which(pop == 2)] &lt;- "pop2"
-pop[which(pop == 3)] &lt;- "pop3"
-capreolus &lt;- capreolusGPA$coords #extract landmark coordinates
-</code></p>
-
-<p>Following the Procrustes superimposition is the calculation of mean shapes, both for all males and for separate populations. After mean shapes are calculated the only thing left is to use TPS in order to deform outlines (variable d), using mean shape of all males as a reference and mean shape of populations as target. This can all be done using <em>Morpho</em> R-package from Stefan Schlager.</p>
-
-<p><code>r Mean shapes and TPS deformations
-meanCap &lt;- mshape(capreolus)
-meanPop1 &lt;- mshape(capreolus[,,which(pop == "pop1")]) #by population
-meanPop2 &lt;- mshape(capreolus[,,which(pop == "pop2")])
-meanPop3 &lt;- mshape(capreolus[,,which(pop == "pop3")])
-pop1 &lt;- data.frame(tps3d(as.matrix(d), meanCap, meanPop1)) #for each population
-pop2 &lt;- data.frame(tps3d(as.matrix(d), meanCap, meanPop2))
-pop3 &lt;- data.frame(tps3d(as.matrix(d), meanCap, meanPop3))
-capWhole &lt;- rbind(pop1, pop2, pop3) #combine data
-pops &lt;- c(rep("pop1", 2836), rep("pop2", 2836), rep("pop3", 2836)) #outline has 2836 points
-</code></p>
-
-<p>Finally, depicting shape changes can be achieved by wonderful Hadley Wickham`s <em>ggplot2</em> R-package. This package has a neat way of &ldquo;forcing&rdquo; you to keep your data organized, so all variables are inside one data frame, both quantitative and qualitative.</p>
-
-<p><code>r ggplot2 plotting of shape outline deformations
-wholeCap &lt;- data.frame(capWhole, pops) #deformed outlines and population membership
-theme_set(theme_bw()) #change default ggplot theme to b&amp;w
-dplot &lt;- ggplot(wholeCap, aes(wholeCap[,1],wholeCap[,2], group = pops)) #initialize ggplot object
-dplot &lt;- dplot + geom_path(size = 1, aes(color = pops)) + facet_grid(.~pops) #add layers
-dplot + theme(axis.title = element_blank(), axis.text = element_blank(), axis.ticks = element_blank())
-</code></p>
-
-<p><img class="center" src="/images/post1outline.png" width="616" height="546" title="&lsquo;Outlines&rsquo;" ></p>
-
-<p>By inspecting outlines it can be seen that the individuals from pop1 are the smallest while the ones from pop2 are the largest. Shape differences are also determined by the relationship of length to width, so that individuals from pop2 have the widest crania, while the ones from pop1 have the narrowest. Also, it can be seen that in the individuals with the largest crania, size differences are detemined mostly by dimensions of the anterior part, maxillary and rostral regions, that are both wider and longer with respect to individuals with smaller crania. Posterior part of the cranium is more similar between individuals from different populations, and it may be more stable.</p>
 ]]></content>
   </entry>
   
