@@ -4,7 +4,7 @@
   <title><![CDATA[Category: R | Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/blog/categories/r/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-04-06T15:57:22+02:00</updated>
+  <updated>2014-05-03T15:42:47+02:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -12,6 +12,91 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Modularity, Graphs and Triangulations]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/05/03/modularity-graphs-and-triangulations/"/>
+    <updated>2014-05-03T00:08:25+02:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/05/03/modularity-graphs-and-triangulations</id>
+    <content type="html"><![CDATA[<p>Continuing on the previous post, procedures presented here show the comparison between the usual assesment of modularity in the collection of landmarks (same dataset as before) and the depiction of modular structure through graph theory. Usually, modularity in the mammalian cranium is determined a-priori, according to some of the established hypotheses about the developmental origin of cranial elements. One of the most prevalent hypotheses is the two-module organization, one module comprising of elements originating mainly from the neural crest embryonic tissue (anterior cranium) and one comprising of elements with somitomeric origin (posterior cranium). Following code shows the test of this specific hypothesis using <em>geomorph</em> package functions, and additional usage of <em>deldir</em> for visualization of modularity hypotheses.</p>
+
+<p>```r Importing data, basic GM, modularity and plots
+library(geomorph)
+library(deldir)
+library(ggplot2)
+load(&ldquo;capSample.RData&rdquo;)
+theme_set(theme_bw())</p>
+
+<p>capGPA &lt;&ndash; gpagen(capSample)
+capCoords &lt;&ndash; capGPA$coords
+mshapeCap &lt;&ndash; mshape(capCoords) #mean shape is useful for plotting</p>
+
+<h1>vector depicting the division of landmarks according to modularity</h1>
+
+<p>modularity1.gps &lt;&ndash; c(&ldquo;A&rdquo;,&ldquo;A&rdquo;,&ldquo;A&rdquo;,&ldquo;A&rdquo;,&ldquo;A&rdquo;,&ldquo;A&rdquo;,&ldquo;A&rdquo;,&ldquo;A&rdquo;,&ldquo;B&rdquo;,&ldquo;B&rdquo;,&ldquo;A&rdquo;,&ldquo;B&rdquo;,&ldquo;B&rdquo;,&ldquo;B&rdquo;,&ldquo;B&rdquo;,&ldquo;B&rdquo;)</p>
+
+<h1>test for modularity based on the RV coefficient</h1>
+
+<p>modularity1 &lt;&ndash; compare.modular.partitions(capCoords, landgroups = modularity1.gps)</p>
+
+<h1>plot of landmark membership to a-priori modules</h1>
+
+<p>deldir(mshapeCap[,1], mshapeCap[,2], plotit = TRUE, wlines = &ldquo;triang&rdquo;, xlim = c(-0.2,0.55))
+points(mshapeCap[c(1:8,11),1], mshapeCap[c(1:8,11),2], col = &ldquo;#FF8740&rdquo;, pch = 19, cex = 1.2)
+points(mshapeCap[c(9,10,12:16),1], mshapeCap[c(9,10,12:16),2], col = &ldquo;#61B4CF&rdquo;, pch = 19, cex = 1.2)
+legend(0.2,0.4, legend = c(&ldquo;neural crest&rdquo;, &ldquo;somitomere&rdquo;), fill = colormap)
+```</p>
+
+<p>Figure 1 shows the theoretical distribution of the RV coefficients, calculated for all posible two-module subdivisions of landmarks, as well as the observed RV value from the hypothesis depicted in Figure 2. Since the observed value is lower than most of the hypothetic values, then it could be said that this modularity hypothesis stands.</p>
+
+<p><img class="center" src="/images/RVmodularity.png" width="570" height="497" title="&lsquo;RV coefficients&rsquo;" >
+<img class="center" src="/images/modularityLand.png" width="344" height="376" title="&lsquo;Modularity hypothesis&rsquo;" ></p>
+
+<p>The idea for using graph theory representation and analysis of modularity is based on correlation matrix, same one from the previous post. Correlation matrix was obtained through Delaunay triangulation and every vertex (node) in the graph actually represents the 1/3 of the total area of all Delaunay triangles emanating from the corresponding landmark.</p>
+
+<p><code>r Delaunay triangulation and derivation of the correlation matrix
+cicoCap &lt;- t(apply(capCoords, 3, function(A) deldir(A[,1],A[,2])$summary[,4]))
+cicoCap &lt;- data.frame(cicoCap)
+names(cicoCap) &lt;- paste("lm", c(1:16), sep = "")
+capCor &lt;- abs(cor(cicoCap)) #correlation matrix
+diag(capCor) &lt;- 0 #diagonals must be set to zero
+</code></p>
+
+<p>Graph based on the correlation matrix can be created and manipulated with the wonderful <em>igraph</em> package. Vertices of this graph will be abovementioned areas, while the edges will represent correlation (edge weights) between areas around each landmark. According to weights, edges can be colored and the strength of thier lines increased, so that the most correlated landmarks wolud be more obvious.</p>
+
+<p><code>r iGraph graph creation and manipulation
+graph &lt;- graph.adjacency(capCor, weighted=TRUE, mode="upper")
+E(graph)[ weight &gt; 0.5 ]$color &lt;- "#A63E00"
+E(graph)[ weight &gt; 0.5 ]$width &lt;- 3.6
+E(graph)[ weight &gt; -0.5 &amp; weight &lt; 0.5 ]$color &lt;- "#D6EBFF"
+E(graph)[ weight &gt; -0.5 &amp; weight &lt; 0.5 ]$width &lt;- 1.2
+</code></p>
+
+<p>Modularity, or community structure in the graph theory represents the degree of compartmentalization in the graph structure, based on the spatial relationship or the weights of graph edges. Although, a-priori subdivision of graph vertices is possible, and the evaluation of such graph community can be easily done, the advantage of graph theory for modularity is the availability of algorithms for searching the community structure, so it can derive subdivsion a-posteriori, that can be compared to the hypothesis from Figure 1.</p>
+
+<p>```r Graph modularity and plotting
+gsc &lt;&ndash; leading.eigenvector.community(graph, weights = E(graph)$weights)
+modularity(graph, membership(gsc))
+colormap &lt;&ndash; c(&ldquo;#FF8740&rdquo;, &ldquo;#61B4CF&rdquo;)
+V(graph)$color &lt;&ndash; colormap[gsc$membership] #color graph vertices according to community</p>
+
+<h1>graph layout will be circular since values for the edges range from 0.2 to 0.9,</h1>
+
+<h1>and they all form similar attractive force between the vertices.</h1>
+
+<p>graph$layout &lt;&ndash; layout.fruchterman.reingold #really no effect on the shape of this graph</p>
+
+<p>plot(graph, vertex.size = 20, vertex.shape = &ldquo;circle&rdquo;)
+legend(0.8,1.4, legend = c(&ldquo;neural crest&rdquo;, &ldquo;somitomere&rdquo;), fill = colormap)
+```</p>
+
+<p>Leading eigenvector community algorithm tries to find community structure in the graph by calculating the eigenvector of the modularity matrix for the largest positive eigenvalue and then separating vertices into two communities based on the sign of the corresponding element in the eigenvector (Newman, 2006). This method was preffered over many others because it is closer to usual multivariate methods, such as PCA, that are commonly used to depict variability patterns.</p>
+
+<p><img class="center" src="/images/modularityGraph.png" width="541" height="467" title="&lsquo;Modularity graph&rsquo;" ></p>
+
+<p>Graph community strucure depicts modularity in the landmark configurations accurately, with the exception of lm16, that is positioned on the posterior basicranium. Higher correlations are, on average, present within modules while between modules, only one connection is higher than 0.5, that between lm2 and lm14. Since these landmarks lay on the opposite sides of the cranium, they may encompass the variability in total anterior-posterior length. i.e. cranial size.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Delaunay Triangulation Experiment]]></title>
@@ -51,24 +136,6 @@ corrplot(capCor, method = "circle", tl.cex = 0.93, order = "hclust", addrect = 3
 <p><img class="center" src="/images/Corrplot.png" width="570" height="529" title="&lsquo;Delaunay&rsquo;" ></p>
 
 <p>Correlation plot with three proposed general landmark groups in the matrix reveals that the correlations are, on average, higher for locally grouped landmaks, especially the anterior ones, from 1 to 7. This can`t be used as a reliablie test for modularity hypothesis, but it can serve as a basis for further analyses based on construcing linked graphs or networks using correlation matrices from landmark data, where the xy coordinates are transformed to one number. Also this can be a useful way of representing modular structure visually, since both Delaunay and correlation plots are highly customizable, and can be colored according to real modularity hypotheses. Testing some of these will be the subject of future posts.</p>
-
-<div id="disqus_thread"></div>
-
-
-<script type="text/javascript">
-/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
-var disqus_shortname = 'creativemorphometrics'; // required: replace example with your forum shortname
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script>
-
-
-<p><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a></p>
 ]]></content>
   </entry>
   
