@@ -8,7 +8,7 @@ keywords: "research, biology, mammals, morphometrics, morphology"
 description: "This page is the about page stating my current position and research interests, as well as online blogging tools"
 ---
 
-My name is Miloš Blagojević, and I currently work at the Department for Biology and Ecology, Faculty of Science, Kragujevac, Serbia as a teaching assistant. My research is focused on shape and size changes in complex morphological structures, mainly crania of two wonderful mammalian species, chamois (*Rupicapra rupicapra*) and roe deer (*Capreolus capreolus*).
+My name is Miloš Blagojević, and I currently work at the Department for Biology and Ecology, Faculty of Science, Kragujevac, Serbia as a researh associate. My research is focused on shape and size changes in complex morphological structures, mainly crania of two wonderful mammalian species, chamois (*Rupicapra rupicapra*) and roe deer (*Capreolus capreolus*), but I`m also interested in other shapes, such as fish, crustaceans and compound leaves.
 
 {% img center /images/rupiabout.png 500 375 'Milos' %}
 

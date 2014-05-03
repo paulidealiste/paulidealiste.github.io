@@ -41,17 +41,3 @@ corrplot(capCor, method = "circle", tl.cex = 0.93, order = "hclust", addrect = 3
 {% img center /images/Corrplot.png 570 529 'Delaunay' %}
 
 Correlation plot with three proposed general landmark groups in the matrix reveals that the correlations are, on average, higher for locally grouped landmaks, especially the anterior ones, from 1 to 7. This can`t be used as a reliablie test for modularity hypothesis, but it can serve as a basis for further analyses based on construcing linked graphs or networks using correlation matrices from landmark data, where the xy coordinates are transformed to one number. Also this can be a useful way of representing modular structure visually, since both Delaunay and correlation plots are highly customizable, and can be colored according to real modularity hypotheses. Testing some of these will be the subject of future posts.
-
-<div id="disqus_thread"></div>
-<script type="text/javascript">
-/* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
-var disqus_shortname = 'creativemorphometrics'; // required: replace example with your forum shortname
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
