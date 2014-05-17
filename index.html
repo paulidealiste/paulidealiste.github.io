@@ -75,6 +75,352 @@
       
   <header>
     
+      <h1 class="entry-title"><a href="/blog/2014/05/17/complete-procrustes-in-python/">Complete Procrustes in Python</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-17T20:38:16+02:00" pubdate data-updated="true">May 17<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Procrustes superimposition is the first analytic step in geometric morphometrics and this post shows one possible solution to performing it in Python<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>, using several functions defined in previous posts. First steps include data generation and definition of functions important for extracting shape variables from randomly generated landmark data. These functions are <em>centsize</em> which calculates centroid size from a numpy array (xy data) and <em>transScale</em> which translates landmark coordinates to the origin of the coordinate system and scales them to unit centroid size. The <em>mshapr</em> function is needed in the main superimposition function since it calculates succesive mean shapes (all configurations), excluding the configuration that is currently being rotated.</p>
+
+<figure class='code'><figcaption><span>Import libraries, function definition and data generation</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>import numpy as np
+</span><span class='line'>import pandas as pd
+</span><span class='line'>import matplotlib.pyplot as plt
+</span><span class='line'>import scipy.spatial.distance as sd
+</span><span class='line'>
+</span><span class='line'>def centsize<span class="p">(</span>M<span class="p">)</span><span class="o">:</span> <span class="c1">#centroid size</span>
+</span><span class='line'>  p <span class="o">=</span> M.shape<span class="p">[</span><span class="m">0</span><span class="p">]</span>
+</span><span class='line'>  csize <span class="o">=</span> np.sqrt<span class="p">(</span>np.sum<span class="p">(</span>M.var<span class="p">(</span><span class="m">0</span><span class="p">))</span><span class="o">*</span><span class="p">(</span>p<span class="m">-1</span><span class="p">))</span>
+</span><span class='line'>  <span class="kr">return</span> csize
+</span><span class='line'>
+</span><span class='line'>def transScale<span class="p">(</span>M<span class="p">)</span><span class="o">:</span>  <span class="c1">#translation and scale</span>
+</span><span class='line'>  tM <span class="o">=</span> M <span class="o">-</span> M.mean<span class="p">()</span>
+</span><span class='line'>  centSize <span class="o">=</span> centsize<span class="p">(</span>M<span class="p">)</span>
+</span><span class='line'>  tM <span class="o">=</span> tM <span class="o">/</span> centSize
+</span><span class='line'>  <span class="kr">return</span> tM
+</span><span class='line'>
+</span><span class='line'>def mshapr <span class="p">(</span>pdf<span class="p">)</span><span class="o">:</span>  <span class="c1">#which is a pandas DataFrame, coordinates and individuals columns</span>
+</span><span class='line'>  meanShapes <span class="o">=</span> pd.DataFrame<span class="p">()</span>
+</span><span class='line'>  dimen <span class="o">=</span> len<span class="p">(</span>allCoords.individuals.unique<span class="p">())</span>
+</span><span class='line'>  <span class="kr">for</span> ind <span class="kr">in</span> range<span class="p">(</span><span class="m">0</span><span class="p">,</span> dimen<span class="p">)</span><span class="o">:</span>
+</span><span class='line'>    temp <span class="o">=</span> pdf<span class="p">[</span>pdf.individuals <span class="o">!=</span> ind<span class="p">]</span>
+</span><span class='line'>    meanShape <span class="o">=</span> temp.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="o">:</span><span class="m">2</span><span class="p">]</span>.groupby<span class="p">(</span>temp.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">2</span><span class="p">])</span>.mean<span class="p">()</span>
+</span><span class='line'>    meanShapes <span class="o">=</span> meanShapes.append<span class="p">(</span>meanShape<span class="p">)</span>
+</span><span class='line'>  <span class="kr">return</span> meanShapes
+</span><span class='line'>
+</span><span class='line'>coordstest <span class="o">=</span> np.vstack<span class="p">([</span>np.random.uniform<span class="p">(</span><span class="m">175</span><span class="p">,</span> <span class="m">220</span><span class="p">,</span> <span class="m">10</span><span class="p">),</span>   <span class="c1">#usual data generation</span>
+</span><span class='line'>                        np.random.uniform<span class="p">(</span><span class="m">175</span><span class="p">,</span> <span class="m">220</span><span class="p">,</span> <span class="m">10</span><span class="p">)])</span>.T
+</span><span class='line'>coords <span class="o">=</span> np.vstack<span class="p">([</span>np.random.multivariate_normal<span class="p">(</span>coordstest<span class="p">[</span>i<span class="p">,</span><span class="o">:</span><span class="p">],</span> <span class="p">[[</span><span class="m">3</span><span class="p">,</span><span class="m">0</span><span class="p">],[</span><span class="m">0</span><span class="p">,</span><span class="m">3</span><span class="p">]],</span> <span class="m">200</span><span class="p">)</span> <span class="kr">for</span> i <span class="kr">in</span> range<span class="p">(</span><span class="m">10</span><span class="p">)])</span>
+</span><span class='line'>coordinates <span class="o">=</span> pd.Series<span class="p">((</span>np.arange<span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">10</span><span class="p">)</span>.reshape<span class="p">(</span><span class="m">-1</span><span class="p">,</span><span class="m">1</span><span class="p">)</span><span class="o">*</span>np.ones<span class="p">(</span><span class="m">200</span><span class="p">)</span>.reshape<span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">-1</span><span class="p">))</span>.flatten<span class="p">())</span> <span class="c1">#coordinates column</span>
+</span><span class='line'>individuals <span class="o">=</span> np.tile<span class="p">(</span>np.arange<span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">200</span><span class="p">),</span><span class="m">10</span><span class="p">)</span> <span class="c1">#individuals column</span>
+</span><span class='line'>allCoords <span class="o">=</span> pd.DataFrame<span class="p">(</span>coords<span class="p">,</span> columns <span class="o">=</span> <span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
+</span><span class='line'>allCoords<span class="p">[</span><span class="s">&#39;coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> coordinates
+</span><span class='line'>allCoords<span class="p">[</span><span class="s">&#39;individuals&#39;</span><span class="p">]</span> <span class="o">=</span> individuals
+</span><span class='line'>allCoords <span class="o">=</span> allCoords.sort_index<span class="p">(</span>by <span class="o">=</span> <span class="p">[</span><span class="s">&#39;individuals&#39;</span><span class="p">,</span><span class="s">&#39;coordinates&#39;</span><span class="p">])</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Definition of the <em>pProc</em> function follows the same rules as in the previous post, with the robust (and ugly for now) if clause that is only included to allow either pandas DataFrame or a numpy array as the input data (both for configurations and mean shape objects). It also returns only the rotated matrix, landmark configuration (<em>pmat1</em>) and not the mean shape.</p>
+
+<figure class='code'><figcaption><span>pProc function for two configuration matrices</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>def pProc<span class="p">(</span>mat1<span class="p">,</span> mat2<span class="p">)</span><span class="o">:</span> <span class="c1">#returning only centred preshape of mat1 on mat2</span>
+</span><span class='line'>  <span class="kr">if</span> type<span class="p">(</span>mat1<span class="p">)</span> is np.ndarray and type<span class="p">(</span>mat2<span class="p">)</span> is np.ndarray<span class="o">:</span>
+</span><span class='line'>    k <span class="o">=</span> mat1.shape<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="m">-1</span>
+</span><span class='line'>    m <span class="o">=</span> mat1.shape<span class="p">[</span><span class="m">0</span><span class="p">]</span>
+</span><span class='line'>    sscaledMat1 <span class="o">=</span> mat1 <span class="o">/</span> centsize<span class="p">(</span>mat1<span class="p">)</span>
+</span><span class='line'>    sscaledMat2 <span class="o">=</span> mat2 <span class="o">/</span> centsize<span class="p">(</span>mat2<span class="p">)</span>
+</span><span class='line'>    z1 <span class="o">=</span> sscaledMat1 <span class="o">-</span> <span class="p">[</span>sscaledMat1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">]</span>.mean<span class="p">(),</span> sscaledMat1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">]</span>.mean<span class="p">()]</span>
+</span><span class='line'>    z2 <span class="o">=</span> sscaledMat2 <span class="o">-</span> <span class="p">[</span>sscaledMat2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">]</span>.mean<span class="p">(),</span> sscaledMat2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">]</span>.mean<span class="p">()]</span>
+</span><span class='line'>    tempSv <span class="o">=</span> np.dot<span class="p">(</span>np.transpose<span class="p">(</span>z2<span class="p">),</span> z1<span class="p">)</span>
+</span><span class='line'>    svdMat <span class="o">=</span> np.linalg.svd<span class="p">(</span>tempSv<span class="p">)</span>
+</span><span class='line'>    U <span class="o">=</span> svdMat<span class="p">[</span><span class="m">0</span><span class="p">]</span>
+</span><span class='line'>    V <span class="o">=</span> svdMat<span class="p">[</span><span class="m">2</span><span class="p">]</span>
+</span><span class='line'>    Ds <span class="o">=</span> svdMat<span class="p">[</span><span class="m">1</span><span class="p">]</span>
+</span><span class='line'>    tempSig <span class="o">=</span> np.linalg.det<span class="p">(</span>np.dot<span class="p">(</span>np.transpose<span class="p">(</span>z1<span class="p">),</span> z2<span class="p">))</span>
+</span><span class='line'>    sig <span class="o">=</span> np.sign<span class="p">(</span>tempSig<span class="p">)</span>
+</span><span class='line'>    Ds<span class="p">[</span>k<span class="p">]</span> <span class="o">=</span> sig <span class="o">*</span> np.absolute<span class="p">(</span>Ds<span class="p">[</span>k<span class="p">])</span>
+</span><span class='line'>    U<span class="p">[</span><span class="o">:</span><span class="p">,</span>k<span class="p">]</span> <span class="o">=</span> sig <span class="o">*</span> U<span class="p">[</span><span class="o">:</span><span class="p">,</span>k<span class="p">]</span>
+</span><span class='line'>    Gam <span class="o">=</span> np.dot<span class="p">(</span>V<span class="p">,</span> np.transpose<span class="p">(</span>U<span class="p">))</span>
+</span><span class='line'>    beta <span class="o">=</span> np.sum<span class="p">(</span>Ds<span class="p">)</span>
+</span><span class='line'>    pmat1 <span class="o">=</span> np.dot<span class="p">(</span>z1<span class="p">,</span> Gam<span class="p">)</span>
+</span><span class='line'>    pmat1 <span class="o">=</span> pd.DataFrame<span class="p">(</span>pmat1<span class="p">,</span> columns <span class="o">=</span> <span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
+</span><span class='line'>    <span class="kr">return</span> pmat1
+</span><span class='line'>  <span class="kr">else</span><span class="o">:</span>
+</span><span class='line'>    mat1x <span class="o">=</span> mat1.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">]</span>
+</span><span class='line'>    mat1y <span class="o">=</span> mat1.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">]</span>
+</span><span class='line'>    mat1 <span class="o">=</span> np.concatenate<span class="p">([</span>mat1x<span class="p">,</span> mat1y<span class="p">],</span> axis <span class="o">=</span> <span class="m">1</span><span class="p">)</span>.reshape<span class="p">(</span>mat1.shape<span class="p">[</span><span class="m">1</span><span class="p">],</span>mat1.shape<span class="p">[</span><span class="m">0</span><span class="p">])</span>.T
+</span><span class='line'>    mat2x <span class="o">=</span> mat2.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">]</span>
+</span><span class='line'>    mat2y <span class="o">=</span> mat2.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">]</span>
+</span><span class='line'>    mat2 <span class="o">=</span> np.concatenate<span class="p">([</span>mat2x<span class="p">,</span> mat2y<span class="p">],</span> axis <span class="o">=</span> <span class="m">1</span><span class="p">)</span>.reshape<span class="p">(</span>mat2.shape<span class="p">[</span><span class="m">1</span><span class="p">],</span>mat2.shape<span class="p">[</span><span class="m">0</span><span class="p">])</span>.T
+</span><span class='line'>    k <span class="o">=</span> mat1.shape<span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="m">-1</span>
+</span><span class='line'>    m <span class="o">=</span> mat1.shape<span class="p">[</span><span class="m">0</span><span class="p">]</span>
+</span><span class='line'>    sscaledMat1 <span class="o">=</span> mat1 <span class="o">/</span> centsize<span class="p">(</span>mat1<span class="p">)</span>
+</span><span class='line'>    sscaledMat2 <span class="o">=</span> mat2 <span class="o">/</span> centsize<span class="p">(</span>mat2<span class="p">)</span>
+</span><span class='line'>    z1 <span class="o">=</span> sscaledMat1 <span class="o">-</span> <span class="p">[</span>sscaledMat1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">]</span>.mean<span class="p">(),</span> sscaledMat1<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">]</span>.mean<span class="p">()]</span>
+</span><span class='line'>    z2 <span class="o">=</span> sscaledMat2 <span class="o">-</span> <span class="p">[</span>sscaledMat2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">]</span>.mean<span class="p">(),</span> sscaledMat2<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">]</span>.mean<span class="p">()]</span>
+</span><span class='line'>    tempSv <span class="o">=</span> np.dot<span class="p">(</span>np.transpose<span class="p">(</span>z2<span class="p">),</span> z1<span class="p">)</span>
+</span><span class='line'>    svdMat <span class="o">=</span> np.linalg.svd<span class="p">(</span>tempSv<span class="p">)</span>
+</span><span class='line'>    U <span class="o">=</span> svdMat<span class="p">[</span><span class="m">0</span><span class="p">]</span>
+</span><span class='line'>    V <span class="o">=</span> svdMat<span class="p">[</span><span class="m">2</span><span class="p">]</span>
+</span><span class='line'>    Ds <span class="o">=</span> svdMat<span class="p">[</span><span class="m">1</span><span class="p">]</span>
+</span><span class='line'>    tempSig <span class="o">=</span> np.linalg.det<span class="p">(</span>np.dot<span class="p">(</span>np.transpose<span class="p">(</span>z1<span class="p">),</span> z2<span class="p">))</span>
+</span><span class='line'>    sig <span class="o">=</span> np.sign<span class="p">(</span>tempSig<span class="p">)</span>
+</span><span class='line'>    Ds<span class="p">[</span>k<span class="p">]</span> <span class="o">=</span> sig <span class="o">*</span> np.absolute<span class="p">(</span>Ds<span class="p">[</span>k<span class="p">])</span>
+</span><span class='line'>    U<span class="p">[</span><span class="o">:</span><span class="p">,</span>k<span class="p">]</span> <span class="o">=</span> sig <span class="o">*</span> U<span class="p">[</span><span class="o">:</span><span class="p">,</span>k<span class="p">]</span>
+</span><span class='line'>    Gam <span class="o">=</span> np.dot<span class="p">(</span>V<span class="p">,</span> np.transpose<span class="p">(</span>U<span class="p">))</span>
+</span><span class='line'>    beta <span class="o">=</span> np.sum<span class="p">(</span>Ds<span class="p">)</span>
+</span><span class='line'>    pmat1 <span class="o">=</span> np.dot<span class="p">(</span>z1<span class="p">,</span> Gam<span class="p">)</span>
+</span><span class='line'>    pmat1 <span class="o">=</span> pd.DataFrame<span class="p">(</span>pmat1<span class="p">,</span> columns <span class="o">=</span> <span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
+</span><span class='line'>    <span class="kr">return</span> pmat1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Finally, the <em>pGP</em> function, that can perform partial Procrustes superimposition for any number of individuals (landmark configurations) and landmarks. Generated data has 200 individuals and 10 2D landmarks. For now this function will ask such information in the function call, so that mmat1 is pandas DataFrame with x, y, coordinates and individuals columns (generated above), numind is the number of individuals, dim is 2D (3D not yet supported), and numland is the number of landmarks. For clearer understanding of the following code, comments are included where appropriate.</p>
+
+<figure class='code'><figcaption><span>Partial Procrustes Superimposition</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>def pGP <span class="p">(</span>mmat1<span class="p">,</span> numind<span class="p">,</span> dim<span class="p">,</span> numland<span class="p">)</span><span class="o">:</span>
+</span><span class='line'>  groupCoords <span class="o">=</span> mmat1.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="o">:</span><span class="m">2</span><span class="p">]</span>.groupby<span class="p">(</span>mmat1.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">3</span><span class="p">])</span>
+</span><span class='line'>  transCoords <span class="o">=</span> groupCoords.apply<span class="p">(</span>transScale<span class="p">)</span> <span class="c1">#translate and scale the sample data</span>
+</span><span class='line'>  individuals <span class="o">=</span> np.tile<span class="p">(</span>np.arange<span class="p">(</span><span class="m">0</span><span class="p">,</span>numind<span class="p">),</span>numland<span class="p">)</span>
+</span><span class='line'>  coordinates <span class="o">=</span> pd.Series<span class="p">((</span>np.arange<span class="p">(</span><span class="m">0</span><span class="p">,</span>numland<span class="p">)</span>.reshape<span class="p">(</span><span class="m">-1</span><span class="p">,</span><span class="m">1</span><span class="p">)</span><span class="o">*</span>np.ones<span class="p">(</span>numind<span class="p">)</span>.reshape<span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">-1</span><span class="p">))</span>.flatten<span class="p">())</span>
+</span><span class='line'>  transCoords<span class="p">[</span><span class="s">&#39;coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> coordinates
+</span><span class='line'>  transCoords<span class="p">[</span><span class="s">&#39;individuals&#39;</span><span class="p">]</span> <span class="o">=</span> np.sort<span class="p">(</span>individuals<span class="p">)</span>.astype<span class="p">(</span>str<span class="p">)</span>
+</span><span class='line'>  <span class="c1">#this part of the code calculates Q-the convergence criterion</span>
+</span><span class='line'>  <span class="c1">#that is really the sum of the pairwise squared distances between all shapes in the sample</span>
+</span><span class='line'>  <span class="c1">#so that, after rotation these distances are minimized as much as possible</span>
+</span><span class='line'>  arrayx <span class="o">=</span> transCoords.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">]</span>
+</span><span class='line'>  arrayy <span class="o">=</span> transCoords.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">]</span>
+</span><span class='line'>  forDist <span class="o">=</span> np.concatenate<span class="p">([</span>arrayx<span class="p">,</span> arrayy<span class="p">],</span> axis <span class="o">=</span> <span class="m">1</span><span class="p">)</span>.reshape<span class="p">(</span>dim<span class="p">,</span>numland<span class="o">*</span>numind<span class="p">)</span>.T
+</span><span class='line'>  forDist <span class="o">=</span> forDist.reshape<span class="p">(</span>numind<span class="p">,</span> numland<span class="o">*</span><span class="m">2</span><span class="p">)</span> <span class="c1">#distance function from scipy</span>
+</span><span class='line'>  Qm1 <span class="o">=</span> sd.pdist<span class="p">(</span>forDist<span class="p">)</span>
+</span><span class='line'>  Q <span class="o">=</span> Qm1.sum<span class="p">()</span>
+</span><span class='line'>  <span class="kr">while</span> absolute<span class="p">(</span>Q<span class="p">)</span> <span class="o">&gt;</span> <span class="m">0.00001</span><span class="o">:</span> <span class="c1">#execute the following code until Q cannot be reduced anymore</span>
+</span><span class='line'>    groupTrans <span class="o">=</span> transCoords.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="o">:</span><span class="m">2</span><span class="p">]</span>.groupby<span class="p">(</span>transCoords.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">3</span><span class="p">])</span>
+</span><span class='line'>    meanShapes <span class="o">=</span> mshapr<span class="p">(</span>transCoords<span class="p">)</span> <span class="c1">#calculate DataFrame of mean shapes excluding one individual at the time</span>
+</span><span class='line'>    meanShapes<span class="p">[</span><span class="s">&#39;individuals&#39;</span><span class="p">]</span> <span class="o">=</span> np.sort<span class="p">(</span>individuals<span class="p">)</span>.astype<span class="p">(</span>str<span class="p">)</span>
+</span><span class='line'>    meanGroups <span class="o">=</span> meanShapes.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="o">:</span><span class="m">2</span><span class="p">]</span>.groupby<span class="p">(</span>meanShapes.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">2</span><span class="p">])</span>
+</span><span class='line'>    tempRot <span class="o">=</span> pd.DataFrame<span class="p">()</span>
+</span><span class='line'>    <span class="c1">#following for loop performs partial Procrustes superimposition (pProc function from above) between</span>
+</span><span class='line'>    <span class="c1">#mean shapes and each configuration (individual)</span>
+</span><span class='line'>    <span class="kr">for</span> ind <span class="kr">in</span> range<span class="p">(</span><span class="m">0</span><span class="p">,</span> numind<span class="p">)</span><span class="o">:</span>
+</span><span class='line'>      tosto <span class="o">=</span> pProc<span class="p">(</span>groupTrans.get_group<span class="p">(</span>str<span class="p">(</span>ind<span class="p">)),</span> meanGroups.get_group<span class="p">(</span>str<span class="p">(</span>ind<span class="p">)))</span>
+</span><span class='line'>      tempRot <span class="o">=</span> tempRot.append<span class="p">(</span>tosto<span class="p">)</span>
+</span><span class='line'>    tempX <span class="o">=</span> tempRot.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="p">]</span>
+</span><span class='line'>    tempY <span class="o">=</span> tempRot.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">1</span><span class="p">]</span>
+</span><span class='line'>    tempDist <span class="o">=</span> np.concatenate<span class="p">([</span>tempX<span class="p">,</span> tempY<span class="p">],</span> axis <span class="o">=</span> <span class="m">1</span><span class="p">)</span>.reshape<span class="p">(</span>dim<span class="p">,</span>numland<span class="o">*</span>numind<span class="p">)</span>.T
+</span><span class='line'>    tempDist <span class="o">=</span> forDist.reshape<span class="p">(</span>numind<span class="p">,</span> numland<span class="o">*</span><span class="m">2</span><span class="p">)</span>
+</span><span class='line'>    Qm2 <span class="o">=</span> sd.pdist<span class="p">(</span>tempDist<span class="p">)</span>
+</span><span class='line'>    Q <span class="o">=</span> Qm1.sum<span class="p">()</span> <span class="o">-</span> Qm2.sum<span class="p">()</span>
+</span><span class='line'>    Qm1 <span class="o">=</span> Qm2 <span class="c1">#re-calculate the convergence criterion at each step</span>
+</span><span class='line'>    transCoords <span class="o">=</span> tempRot
+</span><span class='line'>  <span class="kr">return</span> tempRot
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>DataFrame <em>tempRot</em> holds the superimposed configurations (shape variables) that can, subsequently, be used in standard GM analyses and further. Of course, graphical display of superimposition results can be very interesting, and in this post only basic plots will be given, while some of the further posts may include more visualizations. Figure 1 shows the original raw-generated data, Figure 2 the spatial relationships between raw and superimposed data, while Figure 3 shows only superimposed data.</p>
+
+<figure class='code'><figcaption><span>Plotting the data and the relationship of raw and superimposed data</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>procCoords <span class="o">=</span> pGP<span class="p">(</span>allCoords<span class="p">,</span> <span class="m">200</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">10</span><span class="p">)</span> <span class="c1">#perform superimposition</span>
+</span><span class='line'>procoordinates <span class="o">=</span> np.tile<span class="p">(</span>np.arange<span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">10</span><span class="p">),</span><span class="m">200</span><span class="p">)</span>
+</span><span class='line'>procCoords<span class="p">[</span><span class="s">&#39;coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> procoordinates
+</span><span class='line'>meanShape1 <span class="o">=</span> allCoords.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="o">:</span><span class="m">2</span><span class="p">]</span>.groupby<span class="p">(</span>allCoords.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">2</span><span class="p">])</span>.mean<span class="p">()</span> <span class="c1">#calculate mean shape for raw data</span>
+</span><span class='line'>meanShape1 <span class="o">=</span> pd.DataFrame<span class="p">(</span>polarRotator<span class="p">(</span>np.array<span class="p">(</span>meanShape1<span class="p">)))</span> <span class="c1">#natural ordering for landmark labels</span>
+</span><span class='line'>plt.scatter<span class="p">(</span>allCoords<span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> allCoords<span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">],</span> s <span class="o">=</span> <span class="m">30</span><span class="p">,</span> c <span class="o">=</span> <span class="s">&quot;#82CDFF&quot;</span><span class="p">,</span> edgecolors <span class="o">=</span> <span class="s">&#39;none&#39;</span><span class="p">)</span> <span class="c1">#plot original sampled points</span>
+</span><span class='line'>plt.scatter<span class="p">(</span>meanShape1<span class="p">[</span><span class="m">0</span><span class="p">],</span> meanShape1<span class="p">[</span><span class="m">1</span><span class="p">],</span> s <span class="o">=</span> <span class="m">50</span><span class="p">,</span> c <span class="o">=</span> <span class="s">&quot;#7909E8&quot;</span><span class="p">,</span> edgecolors <span class="o">=</span> <span class="s">&#39;none&#39;</span><span class="p">)</span>
+</span><span class='line'>plt.plot<span class="p">(</span>meanShape1<span class="p">[</span><span class="m">0</span><span class="p">],</span> meanShape1<span class="p">[</span><span class="m">1</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;#7909E8&quot;</span><span class="p">)</span>
+</span><span class='line'>labels <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Landmark {0}&#39;</span>.format<span class="p">(</span>i<span class="p">)</span> <span class="kr">for</span> i <span class="kr">in</span> range<span class="p">(</span><span class="m">10</span><span class="p">)]</span>
+</span><span class='line'><span class="kr">for</span> label<span class="p">,</span> x<span class="p">,</span> y <span class="kr">in</span> zip<span class="p">(</span>labels<span class="p">,</span> meanShape1<span class="p">[</span><span class="m">0</span><span class="p">],</span> meanShape1<span class="p">[</span><span class="m">1</span><span class="p">])</span><span class="o">:</span> <span class="c1">#annotate mean landmarks by numbers</span>
+</span><span class='line'>  plt.annotate<span class="p">(</span>label<span class="p">,</span> xy <span class="o">=</span> <span class="p">(</span>x<span class="p">,</span> y<span class="m">+0.4</span><span class="p">),</span>ha <span class="o">=</span> <span class="s">&#39;right&#39;</span><span class="p">,</span> va <span class="o">=</span> <span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+</span><span class='line'>plt.grid<span class="p">()</span>
+</span><span class='line'>meanShape2 <span class="o">=</span> procCoords.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">0</span><span class="o">:</span><span class="m">2</span><span class="p">]</span>.groupby<span class="p">(</span>procCoords.iloc<span class="p">[</span><span class="o">:</span><span class="p">,</span><span class="m">2</span><span class="p">])</span>.mean<span class="p">()</span> <span class="c1">#calculate mean shape for superimposed data</span>
+</span><span class='line'>meanShape2 <span class="o">=</span> pd.DataFrame<span class="p">(</span>polarRotator<span class="p">(</span>np.array<span class="p">(</span>meanShape2<span class="p">)))</span> <span class="c1">#natural ordering for landmark labels</span>
+</span><span class='line'>plt.scatter<span class="p">(</span>procCoords<span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">],</span> procCoords<span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">],</span> s <span class="o">=</span> <span class="m">30</span><span class="p">,</span> c <span class="o">=</span> <span class="s">&quot;#FFD699&quot;</span><span class="p">,</span> edgecolors <span class="o">=</span> <span class="s">&#39;none&#39;</span><span class="p">)</span>
+</span><span class='line'>plt.scatter<span class="p">(</span>meanShape2<span class="p">[</span><span class="m">0</span><span class="p">],</span> meanShape2<span class="p">[</span><span class="m">1</span><span class="p">],</span> s <span class="o">=</span> <span class="m">50</span><span class="p">,</span> c <span class="o">=</span> <span class="s">&quot;#7909E8&quot;</span><span class="p">,</span> edgecolors <span class="o">=</span> <span class="s">&#39;none&#39;</span><span class="p">)</span>
+</span><span class='line'>plt.plot<span class="p">(</span>meanShape2<span class="p">[</span><span class="m">0</span><span class="p">],</span> meanShape2<span class="p">[</span><span class="m">1</span><span class="p">],</span> <span class="s">&#39;-&#39;</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;#7909E8&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="kr">for</span> label<span class="p">,</span> x<span class="p">,</span> y <span class="kr">in</span> zip<span class="p">(</span>labels<span class="p">,</span> meanShape2<span class="p">[</span><span class="m">0</span><span class="p">],</span> meanShape2<span class="p">[</span><span class="m">1</span><span class="p">])</span><span class="o">:</span> <span class="c1">#annotate mean landmarks by numbers</span>
+</span><span class='line'>  plt.annotate<span class="p">(</span>label<span class="p">,</span> xy <span class="o">=</span> <span class="p">(</span>x<span class="p">,</span> y<span class="m">+0.01</span><span class="p">),</span>ha <span class="o">=</span> <span class="s">&#39;right&#39;</span><span class="p">,</span> va <span class="o">=</span> <span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+</span><span class='line'>plt.grid<span class="p">()</span>
+</span><span class='line'><span class="c1">#for Figure 2 just plt.scatter of both allCoords and procCoords in the same window</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="/images/rawWithout.png" width="650" height="484" title="'raw generated landmark data'" >
+<img class="center" src="/images/originalSuperimposed.png" width="650" height="484" title="'original vs superimposed'" >
+<img class="center" src="/images/superWith.png" width="650" height="481" title="'superimposed landmark data'" ></p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>If using IPython (:)) best way is to paste code with the %paste magic function.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h1 class="entry-title"><a href="/blog/2014/05/03/modularity-graphs-and-triangulations/">Modularity, Graphs and Triangulations</a></h1>
     
     
@@ -1209,6 +1555,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/05/17/complete-procrustes-in-python/">Complete Procrustes in Python</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/05/03/modularity-graphs-and-triangulations/">Modularity, Graphs and Triangulations</a>
       </li>
     
@@ -1222,10 +1572,6 @@
     
       <li class="post">
         <a href="/blog/2014/03/08/python-forcing-monsters%60-shape/">Python Forcing Monsters` Shape</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/02/23/r-generator-and-a-colorful-pca/">R Generator and a Colorful PCA</a>
       </li>
     
   </ul>
