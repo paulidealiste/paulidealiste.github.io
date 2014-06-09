@@ -4,7 +4,7 @@
   <title><![CDATA[Category: R | Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/blog/categories/r/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-05-17T22:05:47+02:00</updated>
+  <updated>2014-06-09T18:49:34+02:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -12,6 +12,111 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Simple Angles and Nice Plots]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/06/09/simple-angles-and-nice-plots/"/>
+    <updated>2014-06-09T17:28:06+02:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/06/09/simple-angles-and-nice-plots</id>
+    <content type="html"><![CDATA[<p>Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in &ldquo;Geometric morphometrics in R&rdquo; by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the <em>polarRotator</em> function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.</p>
+
+<p>```r Plotting the circle, centroid axes and mean configuration
+library(geomorph)
+library(ggplot2)
+library(reshape2)
+library(plyr)
+theme_set(theme_bw())</p>
+
+<p>load(&ldquo;capSample.RData&rdquo;)</p>
+
+<p>capGPA &lt;&ndash; gpagen(capSample)
+capCoords &lt;&ndash; capGPA$coords
+mshapeCap &lt;&ndash; mshape(capCoords) #mean configuration is great for illustrations
+capCentro &lt;&ndash; capGPA$Csize</p>
+
+<p>circleFun &lt;&ndash; function(center = c(0,0), npoints = 100) #drawing an enlosing circle set at the origin (0,0)
+{
+  r = 0.5
+  tt &lt;&ndash; seq(0,2*pi,length.out = npoints)
+  xx &lt;&ndash; center[1] + r * cos(tt)
+  yy &lt;&ndash; center[2] + r * sin(tt)
+  return(data.frame(x = xx, y = yy))
+}</p>
+
+<p>enclosing &lt;&ndash; circleFun(npoints = 100) #it should be centered at zero and have diameter 0.5
+ggCirc &lt;&ndash; ggplot(enclosing, aes(x=x,y=y)) + geom_path(size = 1, color = &ldquo;darkgrey&rdquo;, linetype = 1)
+ggCirc &lt;&ndash; ggCirc + geom_hline(size = 1, color = &ldquo;darkgrey&rdquo;, linetype = 1) + geom_vline(size = 1, color = &ldquo;darkgrey&rdquo;, linetype = 1)</p>
+
+<p>linesAng &lt;&ndash; data.frame(x1 = c(0, 0, 0, 0), y1 = c(0, 0, 0, 0), x2 = mshapeCap[,1], y2 = mshapeCap[,2]) #point coordinates
+linesAng &lt;&ndash; data.frame(linesAng, x3 = linesAng$x2 * 20, y3 = linesAng$y2 *20) #so that the lines would extend through landmarks</p>
+
+<p>ggCirc &lt;&ndash; ggCirc + geom_segment(data = linesAng, aes(x = x1, y = y1, xend = x3, yend = y3), colour = &ldquo;lightblue&rdquo;, size = 1)
+ggCirc &lt;&ndash; ggCirc + geom_point(size = 4.2, color = &ldquo;orange&rdquo;, data = data.frame(mshapeCap), aes(x=X1, y = X2))
+ggCirc &lt;&ndash; ggCirc + geom_text(data = data.frame(mshapeCap), aes(x=X1, y = X2, label = c(1:16)), vjust = -1.2)
+ggCirc &lt;&ndash; ggCirc + coord_cartesian(xlim= c(-0.55, 0.55), ylim= c(-0.55, 0.55))
+``` <br/>
+<img class="center" src="/images/AnglesLandmarks.png" width="500" height="478" title="&lsquo;Landmarks polar angles&rsquo;" ></p>
+
+<p><em>ggplot2</em> has one great geom, polar_angle() that will transform any shape, from Cartesian to polar coordinates. Unfortunately it does not give polar angles as well, but the plot is informative (Figure 2), since landmarks are ordered according to their angular deviation from 0, i.e. the X and Y axes defining the 0.5 centroid-centered ellipse.</p>
+
+<p><code>r Polar coordinate system in ggplot2
+ggPolar &lt;- ggplot(data.frame(mshapeCap), aes(x=X1, y=X2)) + geom_point(size = 4.2, color = "orange")
+ggPolar &lt;- ggPolar + geom_text(aes(label = c(1:16)), vjust = 1.5)
+ggPolar &lt;- ggPolar + coord_polar(start = 0) + xlab("x") + ylab("y")
+</code></p>
+
+<p><img class="center" src="/images/AnglesPolar.png" width="500" height="436" title="&lsquo;Landmarks polar coordinate system&rsquo;" ></p>
+
+<p>Polar angles can be calculated by using the atan2 (arctangent) function, which takes two parameters, x and y and gives one point estimate of the polar angle in radians. This number is really the angle between the positive x-axis of a plane (X from Figure 1) and the point given by its xy coordinates. Since after superimposition the x-axis lies at zero for all landmark configurations, it would be sufficent to use only xy coodinates of landmarks, since centroids are also at 0.</p>
+
+<p>```r Polar angles with atan2 function
+polarAngler &lt;&ndash; function(A) #function to calculate polar angles from the array
+{
+  siz &lt;&ndash; dim(A)[3]
+  len &lt;&ndash; dim(A)[1]
+  polarAngles &lt;&ndash; vector(&ldquo;list&rdquo;, siz)
+  for (i in 1:siz)
+  {</p>
+
+<pre><code>temp &lt;- atan2(A[,2,i], A[,1,i])
+polarAngles[[i]] &lt;- temp
+</code></pre>
+
+<p>  }
+  polarAngles &lt;&ndash; array(unlist(polarAngles), dim = c(len,1,siz))
+  return(polarAngles)
+}</p>
+
+<p>library(circular)
+library(colortools)</p>
+
+<p>pAngles &lt;&ndash; polarAngler(capCoords) #angles for all configurations
+mAngles &lt;&ndash; apply(pAngles, 1, mean) #mean angles for each landmark
+col1 &lt;&ndash; pals(&ldquo;fish&rdquo;) #paletes from colortools
+col2 &lt;&ndash; pals(&ldquo;ocean&rdquo;)
+col3 &lt;&ndash; pals(&ldquo;mystery&rdquo;)
+colorPoint &lt;&ndash; c(col1, col2, col3, &ldquo;#9A76F5&rdquo;) #16 colors for landmarks in whell</p>
+
+<p>plot.circular(circular(t(mAngles), type = &ldquo;angles&rdquo;), sep = 0.0003, col = colorPoint, cex = 1.5)
+legend(0.3,0.6, legend = 1:16, fill = colorPoint, cex = 0.7)</p>
+
+<p>```</p>
+
+<p><img class="center" src="/images/AnglesMean.png" width="500" height="436" title="&lsquo;Landmarks ordered by angles&rsquo;" ></p>
+
+<p>Figure 3 shows the distribution of landmarks from along a circular path (0,     π). It is obvious that landmarks form two distinct groups, one above, and one below the x-axis, with the exception of landmarks 7, 8 and 10 which are the most parallel to the x-axis. The proportion of the overall shape variability left in these angles must be thouroghly checked, but it is not easy, since angle-data can not be analysed by conventional statistics, but by circular or compositional methods. R provides some libraries for this, <em>circular</em> and <em>CircStats</em> which are both derived from the book of Jammalamadaka and Sengupta, &ldquo;Topics in circular Statistics&rdquo; from 2001. If one more individual is added to the circle-plot (Figure 3) it can be can visually inspected how much its coordinates (landmark polar angles) deviate from the sample mean (Figure 4).</p>
+
+<p><code>r Adding individual 10 to circular plot
+ce &lt;- circular(rbind(t(mAngles), pAngles[,,10])) #deviation of individual 10 from the mean
+plot.circular(ce, sep = 0.0003, col = colorPoint, cex = 1.5)
+legend(0.3,0.6, legend = 1:16, fill = colorPoint, cex = 0.7)
+</code></p>
+
+<p><img class="center" src="/images/AnglesMean2.png" width="500" height="436" title="&lsquo;Landmarks ordered by angles + 10&rsquo;" ></p>
+
+<p> Some variablity is present around landmarks 10, 6 and 5, while others are nearly or completely overlapping. The variability may not be large, but it will be checked in future posts, as well as possible PCA with the angular data.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Modularity, Graphs and Triangulations]]></title>
@@ -332,62 +437,6 @@ pcaplot
 <p><img class="center" src="/images/pcaplot.png" width="616" height="466" title="&lsquo;PCA&rsquo;" ></p>
 
 <p>The plot indicates very little differentiation between the populations, but I guess that`s well expected since so much randomness is at hand.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Colorful Outlines for Shape Comparison]]></title>
-    <link href="http://paulidealiste.github.io/blog/2014/01/09/colorful-outlines-for-shape-comparison/"/>
-    <updated>2014-01-09T19:55:01+01:00</updated>
-    <id>http://paulidealiste.github.io/blog/2014/01/09/colorful-outlines-for-shape-comparison</id>
-    <content type="html"><![CDATA[<p>This procedure is based on the outlines generated from the digital photos using imageJ and converting imageJ images to x-y continuous outline data available from <a href="http://goo.gl/TYSzf0" target="_blank">here</a>. Its goal is to present a visual overview of global shape differences between individuals from natural populations, using landmark data from ventral projection of their crania. All outlines are based on deformation via Thin Plate Splines, using mean shapes for populations as deformation targets and references. Superimposition methods as well as preliminary GM analyses were done in R and marvelous <em>geomorph</em> package by Dean Adams and Erik Otarola-Castillo. Additionally, since one of the common points of contemporary scientific research is the reproducibility of solutions offered all posts will also contain randomly generated sample data that could be used similarly to real-world datasets. Sample generation can be very useful, especially in teaching, so I intend to focus on it in future posts.</p>
-
-<p><code>r Importing libraries and generating the basic dataset (files should be placed in your working directory)
-library(geomorph)
-library(ggplot2)
-library(Morpho)
-d &lt;- read.table("ventralnoOutlineCap.txt") #outline data
-load("capreolusRgen.RData")
-capreolusArray &lt;- capreolusSample1 #or capreolusSample2-5
-</code>
-The workspace &ldquo;capreolusRgen.RData&rdquo; (which can be downloaded from <a href="http://goo.gl/4uKerX" target="_blank">here</a>) contains several randomly generated datasetes of 657 individuals and 28 landmarks, named &ldquo;capreolusSample#&rdquo;. These data was generated on the basis of real-world values, using the linear regression model to control random number generators. The code that was used probably does not repoduce the sampling of landmarks well, especially regarding correlations between pairs of landmark coordinates or the landmarks that conform to the object symmetry, but for the purpose of illustration in this post, I hope they should be fine.</p>
-
-<p><code>r Procrustes superimposition
-capreolusGPA &lt;- gpagen(capreolusArray, ShowPlot = FALSE)
-pop &lt;- sample(3, 657, replace = TRUE) #generate random 3 population partition
-pop[which(pop == 1)] &lt;- "pop1"
-pop[which(pop == 2)] &lt;- "pop2"
-pop[which(pop == 3)] &lt;- "pop3"
-capreolus &lt;- capreolusGPA$coords #extract landmark coordinates
-</code></p>
-
-<p>Following the Procrustes superimposition is the calculation of mean shapes, both for all males and for separate populations. After mean shapes are calculated the only thing left is to use TPS in order to deform outlines (variable d), using mean shape of all males as a reference and mean shape of populations as target. This can all be done using <em>Morpho</em> R-package from Stefan Schlager.</p>
-
-<p><code>r Mean shapes and TPS deformations
-meanCap &lt;- mshape(capreolus)
-meanPop1 &lt;- mshape(capreolus[,,which(pop == "pop1")]) #by population
-meanPop2 &lt;- mshape(capreolus[,,which(pop == "pop2")])
-meanPop3 &lt;- mshape(capreolus[,,which(pop == "pop3")])
-pop1 &lt;- data.frame(tps3d(as.matrix(d), meanCap, meanPop1)) #for each population
-pop2 &lt;- data.frame(tps3d(as.matrix(d), meanCap, meanPop2))
-pop3 &lt;- data.frame(tps3d(as.matrix(d), meanCap, meanPop3))
-capWhole &lt;- rbind(pop1, pop2, pop3) #combine data
-pops &lt;- c(rep("pop1", 2836), rep("pop2", 2836), rep("pop3", 2836)) #outline has 2836 points
-</code></p>
-
-<p>Finally, depicting shape changes can be achieved by wonderful Hadley Wickham`s <em>ggplot2</em> R-package. This package has a neat way of &ldquo;forcing&rdquo; you to keep your data organized, so all variables are inside one data frame, both quantitative and qualitative.</p>
-
-<p><code>r ggplot2 plotting of shape outline deformations
-wholeCap &lt;- data.frame(capWhole, pops) #deformed outlines and population membership
-theme_set(theme_bw()) #change default ggplot theme to b&amp;w
-dplot &lt;- ggplot(wholeCap, aes(wholeCap[,1],wholeCap[,2], group = pops)) #initialize ggplot object
-dplot &lt;- dplot + geom_path(size = 1, aes(color = pops)) + facet_grid(.~pops) #add layers
-dplot + theme(axis.title = element_blank(), axis.text = element_blank(), axis.ticks = element_blank())
-</code></p>
-
-<p><img class="center" src="/images/post1outline.png" width="616" height="546" title="&lsquo;Outlines&rsquo;" ></p>
-
-<p>By inspecting outlines it can be seen that the individuals from pop1 are the smallest while the ones from pop2 are the largest. Shape differences are also determined by the relationship of length to width, so that individuals from pop2 have the widest crania, while the ones from pop1 have the narrowest. Also, it can be seen that in the individuals with the largest crania, size differences are detemined mostly by dimensions of the anterior part, maxillary and rostral regions, that are both wider and longer with respect to individuals with smaller crania. Posterior part of the cranium is more similar between individuals from different populations, and it may be more stable.</p>
 ]]></content>
   </entry>
   

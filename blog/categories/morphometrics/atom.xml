@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Morphometrics | Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/blog/categories/morphometrics/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-05-17T22:05:47+02:00</updated>
+  <updated>2014-06-09T18:49:34+02:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -12,6 +12,111 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Simple Angles and Nice Plots]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/06/09/simple-angles-and-nice-plots/"/>
+    <updated>2014-06-09T17:28:06+02:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/06/09/simple-angles-and-nice-plots</id>
+    <content type="html"><![CDATA[<p>Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in &ldquo;Geometric morphometrics in R&rdquo; by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the <em>polarRotator</em> function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.</p>
+
+<p>```r Plotting the circle, centroid axes and mean configuration
+library(geomorph)
+library(ggplot2)
+library(reshape2)
+library(plyr)
+theme_set(theme_bw())</p>
+
+<p>load(&ldquo;capSample.RData&rdquo;)</p>
+
+<p>capGPA &lt;&ndash; gpagen(capSample)
+capCoords &lt;&ndash; capGPA$coords
+mshapeCap &lt;&ndash; mshape(capCoords) #mean configuration is great for illustrations
+capCentro &lt;&ndash; capGPA$Csize</p>
+
+<p>circleFun &lt;&ndash; function(center = c(0,0), npoints = 100) #drawing an enlosing circle set at the origin (0,0)
+{
+  r = 0.5
+  tt &lt;&ndash; seq(0,2*pi,length.out = npoints)
+  xx &lt;&ndash; center[1] + r * cos(tt)
+  yy &lt;&ndash; center[2] + r * sin(tt)
+  return(data.frame(x = xx, y = yy))
+}</p>
+
+<p>enclosing &lt;&ndash; circleFun(npoints = 100) #it should be centered at zero and have diameter 0.5
+ggCirc &lt;&ndash; ggplot(enclosing, aes(x=x,y=y)) + geom_path(size = 1, color = &ldquo;darkgrey&rdquo;, linetype = 1)
+ggCirc &lt;&ndash; ggCirc + geom_hline(size = 1, color = &ldquo;darkgrey&rdquo;, linetype = 1) + geom_vline(size = 1, color = &ldquo;darkgrey&rdquo;, linetype = 1)</p>
+
+<p>linesAng &lt;&ndash; data.frame(x1 = c(0, 0, 0, 0), y1 = c(0, 0, 0, 0), x2 = mshapeCap[,1], y2 = mshapeCap[,2]) #point coordinates
+linesAng &lt;&ndash; data.frame(linesAng, x3 = linesAng$x2 * 20, y3 = linesAng$y2 *20) #so that the lines would extend through landmarks</p>
+
+<p>ggCirc &lt;&ndash; ggCirc + geom_segment(data = linesAng, aes(x = x1, y = y1, xend = x3, yend = y3), colour = &ldquo;lightblue&rdquo;, size = 1)
+ggCirc &lt;&ndash; ggCirc + geom_point(size = 4.2, color = &ldquo;orange&rdquo;, data = data.frame(mshapeCap), aes(x=X1, y = X2))
+ggCirc &lt;&ndash; ggCirc + geom_text(data = data.frame(mshapeCap), aes(x=X1, y = X2, label = c(1:16)), vjust = -1.2)
+ggCirc &lt;&ndash; ggCirc + coord_cartesian(xlim= c(-0.55, 0.55), ylim= c(-0.55, 0.55))
+``` <br/>
+<img class="center" src="/images/AnglesLandmarks.png" width="500" height="478" title="&lsquo;Landmarks polar angles&rsquo;" ></p>
+
+<p><em>ggplot2</em> has one great geom, polar_angle() that will transform any shape, from Cartesian to polar coordinates. Unfortunately it does not give polar angles as well, but the plot is informative (Figure 2), since landmarks are ordered according to their angular deviation from 0, i.e. the X and Y axes defining the 0.5 centroid-centered ellipse.</p>
+
+<p><code>r Polar coordinate system in ggplot2
+ggPolar &lt;- ggplot(data.frame(mshapeCap), aes(x=X1, y=X2)) + geom_point(size = 4.2, color = "orange")
+ggPolar &lt;- ggPolar + geom_text(aes(label = c(1:16)), vjust = 1.5)
+ggPolar &lt;- ggPolar + coord_polar(start = 0) + xlab("x") + ylab("y")
+</code></p>
+
+<p><img class="center" src="/images/AnglesPolar.png" width="500" height="436" title="&lsquo;Landmarks polar coordinate system&rsquo;" ></p>
+
+<p>Polar angles can be calculated by using the atan2 (arctangent) function, which takes two parameters, x and y and gives one point estimate of the polar angle in radians. This number is really the angle between the positive x-axis of a plane (X from Figure 1) and the point given by its xy coordinates. Since after superimposition the x-axis lies at zero for all landmark configurations, it would be sufficent to use only xy coodinates of landmarks, since centroids are also at 0.</p>
+
+<p>```r Polar angles with atan2 function
+polarAngler &lt;&ndash; function(A) #function to calculate polar angles from the array
+{
+  siz &lt;&ndash; dim(A)[3]
+  len &lt;&ndash; dim(A)[1]
+  polarAngles &lt;&ndash; vector(&ldquo;list&rdquo;, siz)
+  for (i in 1:siz)
+  {</p>
+
+<pre><code>temp &lt;- atan2(A[,2,i], A[,1,i])
+polarAngles[[i]] &lt;- temp
+</code></pre>
+
+<p>  }
+  polarAngles &lt;&ndash; array(unlist(polarAngles), dim = c(len,1,siz))
+  return(polarAngles)
+}</p>
+
+<p>library(circular)
+library(colortools)</p>
+
+<p>pAngles &lt;&ndash; polarAngler(capCoords) #angles for all configurations
+mAngles &lt;&ndash; apply(pAngles, 1, mean) #mean angles for each landmark
+col1 &lt;&ndash; pals(&ldquo;fish&rdquo;) #paletes from colortools
+col2 &lt;&ndash; pals(&ldquo;ocean&rdquo;)
+col3 &lt;&ndash; pals(&ldquo;mystery&rdquo;)
+colorPoint &lt;&ndash; c(col1, col2, col3, &ldquo;#9A76F5&rdquo;) #16 colors for landmarks in whell</p>
+
+<p>plot.circular(circular(t(mAngles), type = &ldquo;angles&rdquo;), sep = 0.0003, col = colorPoint, cex = 1.5)
+legend(0.3,0.6, legend = 1:16, fill = colorPoint, cex = 0.7)</p>
+
+<p>```</p>
+
+<p><img class="center" src="/images/AnglesMean.png" width="500" height="436" title="&lsquo;Landmarks ordered by angles&rsquo;" ></p>
+
+<p>Figure 3 shows the distribution of landmarks from along a circular path (0,     π). It is obvious that landmarks form two distinct groups, one above, and one below the x-axis, with the exception of landmarks 7, 8 and 10 which are the most parallel to the x-axis. The proportion of the overall shape variability left in these angles must be thouroghly checked, but it is not easy, since angle-data can not be analysed by conventional statistics, but by circular or compositional methods. R provides some libraries for this, <em>circular</em> and <em>CircStats</em> which are both derived from the book of Jammalamadaka and Sengupta, &ldquo;Topics in circular Statistics&rdquo; from 2001. If one more individual is added to the circle-plot (Figure 3) it can be can visually inspected how much its coordinates (landmark polar angles) deviate from the sample mean (Figure 4).</p>
+
+<p><code>r Adding individual 10 to circular plot
+ce &lt;- circular(rbind(t(mAngles), pAngles[,,10])) #deviation of individual 10 from the mean
+plot.circular(ce, sep = 0.0003, col = colorPoint, cex = 1.5)
+legend(0.3,0.6, legend = 1:16, fill = colorPoint, cex = 0.7)
+</code></p>
+
+<p><img class="center" src="/images/AnglesMean2.png" width="500" height="436" title="&lsquo;Landmarks ordered by angles + 10&rsquo;" ></p>
+
+<p> Some variablity is present around landmarks 10, 6 and 5, while others are nearly or completely overlapping. The variability may not be large, but it will be checked in future posts, as well as possible PCA with the angular data.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Complete Procrustes in Python]]></title>
@@ -452,99 +557,6 @@ plt.legend(loc = &ldquo;lower left&rdquo;)
 <img class="center" src="/images/example2Proc.png" width="616" height="452" title="&lsquo;Procrustes monster 2&rsquo;" ></p>
 
 <p>Following posts should continue on this one and describe how the partial Procrustes superimposition for multilple configurations can be performed with fabulous sientific python.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[R Generator and a Colorful PCA]]></title>
-    <link href="http://paulidealiste.github.io/blog/2014/02/23/r-generator-and-a-colorful-pca/"/>
-    <updated>2014-02-23T11:24:16+01:00</updated>
-    <id>http://paulidealiste.github.io/blog/2014/02/23/r-generator-and-a-colorful-pca</id>
-    <content type="html"><![CDATA[<p>As simple as it may seem, sample data generation is not a trivial task, especially when random landmarks are to be generated. Usually, one would use multivariate normal distribution-based generator (like mvrnorm in R`s MASS package) in order to generate correlated data. The following function was used to generate data similar to the real world datased, unfortunately based directly on it, by using the coefficients from regressions between successive columns in a data matrix, which represent landmark coordinates in XY data matrix. The following function uses <a href="http://goo.gl/ijI1kn" target="_blank">this</a> data matrix (446 individuals and 28 landmarks), and performs regressions between X-Y pairs for all coordinates. Finally it uses intercepts and slopes to infer mean and SD for rnorm function, random number generator.</p>
-
-<p>```r Resampler function for random resamples of a real data matrix</p>
-
-<p>resampler &lt;&ndash; function(mat) #simulations based on rnorm random sampling
-{
-  x &lt;&ndash; dim(mat)[1]
-  y &lt;&ndash; dim(mat)[2]
-  indexrow &lt;&ndash; c(2:x)
-  combinations &lt;&ndash; matrix(c(1:y,2:y), ncol = 2) #ignore the warning message
-  slope &lt;&ndash; numeric(y)
-  intercept &lt;&ndash; numeric(y)
-  sds &lt;&ndash; numeric(y)
-  for(i in 1:y)
-  {</p>
-
-<pre><code>veca &lt;- mat[,combinations[i,]][,1]
-vecb &lt;- mat[,combinations[i,]][,2]
-model &lt;- lm(veca~vecb)
-slope[i] &lt;- coef(model)[2]
-intercept[i] &lt;- coef(model)[1]
-sds[i] &lt;- sd(mat[,combinations[i,]][,1])
-</code></pre>
-
-<p>  }
-  coefs &lt;&ndash; data.frame(intercept,slope,sds)
-  cexox &lt;&ndash; data.frame(c(1:x))
-  for (i in 1:y)
-  {</p>
-
-<pre><code>dataCol &lt;- rnorm(length(mat[,combinations[i,]][,2]),mean=intercept[i]+slope[i]*mat[,combinations[i,]][,2],sd=sds)
-cexox &lt;- cbind(cexox, dataCol)
-</code></pre>
-
-<p>  }
-  sampleMatrix &lt;&ndash; as.matrix(cexox)
-  sampleMatrix &lt;&ndash; sampleMatrix[,-1]
-  return(sampleMatrix)
-}</p>
-
-<p>resampledCap &lt;&ndash; resampler(capreolusMatrix) #resample the original matrix-generate random coordinates
-```
-When the function finishes the output is also an XY matrix, which needs to be converted to an array in order to use it in gpagen function from the <em>geomorph</em> package. After that the procedure follows all the usual steps of the GM analysis, with the exception of factor levels generation in order to simulate grouping, and finally performing PCA on the Procrustes shape variables.</p>
-
-<p><code>r Basic GM procedures and factor level generation
-library(geomorph)
-capreolusArray &lt;- arrayspecs(resampledCap, 28, 2, byLand = FALSE)
-capreolusGPA &lt;- gpagen(capreolusArray, ShowPlot = FALSE)
-pop &lt;- sample(5, 446, replace = TRUE) #generate random 5 population partition
-pop[which(pop == 1)] &lt;- "pop1"
-pop[which(pop == 2)] &lt;- "pop2"
-pop[which(pop == 3)] &lt;- "pop3"
-pop[which(pop == 4)] &lt;- "pop4"
-pop[which(pop == 5)] &lt;- "pop5"
-capreolusGPA2d &lt;- two.d.array(capreolusGPA$coords) #get the data in XY format for PCA
-</code></p>
-
-<p>PCA is then done using the usual R`s prcomp function and <em>ggplot2</em> for plotting the data points using fantastic <a href="http://colorbrewer2.org/" target="_blank">ColorBrewer</a> color schemes (which are the names of types and palettes in <em>ggplot2</em> scale_color_brewer geom). In order to fine-tune the PCA figure, the ggplot2 can also use custom fonts for plot annotation. Prior to that, fonts must be imported and registered, which is greatly facilitated by using the <em>extrafont</em> library.</p>
-
-<p>```r PCA and ggplot2 code for a PCA scatterplot
-capPCAwhole &lt;&ndash; prcomp(capreolusGPA2d)
-capPCA &lt;&ndash; data.frame(capPCAwhole$x[,1], capPCAwhole$x[,2], capPCAwhole$x[,3], capPCAwhole$x[,4])
-capPCA &lt;&ndash; data.frame(capPCA, pop)
-names(capPCA) &lt;&ndash; c(&ldquo;PC1&rdquo;,&ldquo;PC2&rdquo;,&ldquo;PC3&rdquo;,&ldquo;PC4&rdquo;,&ldquo;pop&rdquo;) #prepare a data.frame for ggplot2
-meanPCA1 &lt;&ndash; aggregate(capPCA[,1], mean, by = list(capPCA[,5])) #calculate average PC score per group for plotting
-meanPCA2 &lt;&ndash; aggregate(capPCA[,2], mean, by = list(capPCA[,5]))
-meanPCA &lt;&ndash; data.frame(meanPCA1, meanPCA2[,2])
-names(meanPCA) &lt;&ndash; c(&ldquo;pop&rdquo;,&ldquo;PC1&rdquo;,&ldquo;PC2&rdquo;)</p>
-
-<p>library(extrafont) #for using i.e. Times New Roman Fonts in ggplots
-font_import(pattern=&ldquo;[T/t]imes&rdquo;) #this imports Times font family
-loadfonts(device=&ldquo;pdf&rdquo;)</p>
-
-<p>library (ggplot2)
-theme_set(theme_bw())
-pcaplot &lt;&ndash; ggplot(capPCA, aes(x=PC1, y=PC2, group = pop)) + geom_point(size = 7, shape = 19, aes(color=pop)) + scale_color_brewer(palette=&ldquo;Set1&rdquo;)
-pcaplot &lt;&ndash; pcaplot + theme(panel.grid.major = element_line(size = 0.8, linetype = 2)) + theme(panel.grid.minor = element_line(size = 1, linetype = 2))
-pcaplot &lt;&ndash; pcaplot + theme(text=element_text(size=20, family=&ldquo;Times New Roman&rdquo;), legend.text=element_text(size = 22, family = &ldquo;Times New Roman&rdquo;), legend.title = element_text(family =&ldquo;Times New Roman&rdquo;)) + xlab(&ldquo;PC1&rdquo;) + ylab(&ldquo;PC2&rdquo;)
-pcaplot &lt;&ndash; pcaplot + geom_point(data = meanPCA, size = 14, shape = 19) + geom_text(data = meanPCA, size = 10, label = meanPCA$pop, family = &ldquo;Times New Roman&rdquo;, vjust = -0.9)
-pcaplot
-```</p>
-
-<p><img class="center" src="/images/pcaplot.png" width="616" height="466" title="&lsquo;PCA&rsquo;" ></p>
-
-<p>The plot indicates very little differentiation between the populations, but I guess that`s well expected since so much randomness is at hand.</p>
 ]]></content>
   </entry>
   

@@ -1,0 +1,388 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Simple Angles and Nice Plots - Creative morphometrics</title>
+  <meta name="author" content="Miloš Blagojević">
+
+  
+  <meta name="description" content="This post shows simple calculation of polar angle, after superimposition">
+
+  <meta name="keywords" content="R, Polar angle, circular">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://paulidealiste.github.io/blog/2014/06/09/simple-angles-and-nice-plots">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Creative morphometrics" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Creative morphometrics</a></h1>
+  
+    <h2>Using R and python for colorful research of biological shape</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:paulidealiste.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/software">Software</a></li>
+  <li><a href="/about">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Simple Angles and Nice Plots</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-09T17:28:06+02:00" pubdate data-updated="true">Jun 9<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in &ldquo;Geometric morphometrics in R&rdquo; by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the <em>polarRotator</em> function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.</p>
+
+<figure class='code'><figcaption><span>Plotting the circle, centroid axes and mean configuration</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>library<span class="p">(</span>geomorph<span class="p">)</span>
+</span><span class='line'>library<span class="p">(</span>ggplot2<span class="p">)</span>
+</span><span class='line'>library<span class="p">(</span>reshape2<span class="p">)</span>
+</span><span class='line'>library<span class="p">(</span>plyr<span class="p">)</span>
+</span><span class='line'>theme_set<span class="p">(</span>theme_bw<span class="p">())</span>
+</span><span class='line'>
+</span><span class='line'>load<span class="p">(</span><span class="s">&quot;capSample.RData&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>capGPA <span class="o">&lt;-</span> gpagen<span class="p">(</span>capSample<span class="p">)</span>
+</span><span class='line'>capCoords <span class="o">&lt;-</span> capGPA<span class="o">$</span>coords
+</span><span class='line'>mshapeCap <span class="o">&lt;-</span> mshape<span class="p">(</span>capCoords<span class="p">)</span> <span class="c1">#mean configuration is great for illustrations</span>
+</span><span class='line'>capCentro <span class="o">&lt;-</span> capGPA<span class="o">$</span>Csize
+</span><span class='line'>
+</span><span class='line'>circleFun <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>center <span class="o">=</span> c<span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">0</span><span class="p">),</span> npoints <span class="o">=</span> <span class="m">100</span><span class="p">)</span> <span class="c1">#drawing an enlosing circle set at the origin (0,0)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  r <span class="o">=</span> <span class="m">0.5</span>
+</span><span class='line'>  tt <span class="o">&lt;-</span> seq<span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">2</span><span class="o">*</span>pi<span class="p">,</span>length.out <span class="o">=</span> npoints<span class="p">)</span>
+</span><span class='line'>  xx <span class="o">&lt;-</span> center<span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="o">+</span> r <span class="o">*</span> cos<span class="p">(</span>tt<span class="p">)</span>
+</span><span class='line'>  yy <span class="o">&lt;-</span> center<span class="p">[</span><span class="m">2</span><span class="p">]</span> <span class="o">+</span> r <span class="o">*</span> sin<span class="p">(</span>tt<span class="p">)</span>
+</span><span class='line'>  <span class="kr">return</span><span class="p">(</span>data.frame<span class="p">(</span>x <span class="o">=</span> xx<span class="p">,</span> y <span class="o">=</span> yy<span class="p">))</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>enclosing <span class="o">&lt;-</span> circleFun<span class="p">(</span>npoints <span class="o">=</span> <span class="m">100</span><span class="p">)</span> <span class="c1">#it should be centered at zero and have diameter 0.5</span>
+</span><span class='line'>ggCirc <span class="o">&lt;-</span> ggplot<span class="p">(</span>enclosing<span class="p">,</span> aes<span class="p">(</span>x<span class="o">=</span>x<span class="p">,</span>y<span class="o">=</span>y<span class="p">))</span> <span class="o">+</span> geom_path<span class="p">(</span>size <span class="o">=</span> <span class="m">1</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;darkgrey&quot;</span><span class="p">,</span> linetype <span class="o">=</span> <span class="m">1</span><span class="p">)</span>
+</span><span class='line'>ggCirc <span class="o">&lt;-</span> ggCirc <span class="o">+</span> geom_hline<span class="p">(</span>size <span class="o">=</span> <span class="m">1</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;darkgrey&quot;</span><span class="p">,</span> linetype <span class="o">=</span> <span class="m">1</span><span class="p">)</span> <span class="o">+</span> geom_vline<span class="p">(</span>size <span class="o">=</span> <span class="m">1</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;darkgrey&quot;</span><span class="p">,</span> linetype <span class="o">=</span> <span class="m">1</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>linesAng <span class="o">&lt;-</span> data.frame<span class="p">(</span>x1 <span class="o">=</span> c<span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">),</span> y1 <span class="o">=</span> c<span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">),</span> x2 <span class="o">=</span> mshapeCap<span class="p">[,</span><span class="m">1</span><span class="p">],</span> y2 <span class="o">=</span> mshapeCap<span class="p">[,</span><span class="m">2</span><span class="p">])</span> <span class="c1">#point coordinates</span>
+</span><span class='line'>linesAng <span class="o">&lt;-</span> data.frame<span class="p">(</span>linesAng<span class="p">,</span> x3 <span class="o">=</span> linesAng<span class="o">$</span>x2 <span class="o">*</span> <span class="m">20</span><span class="p">,</span> y3 <span class="o">=</span> linesAng<span class="o">$</span>y2 <span class="o">*</span><span class="m">20</span><span class="p">)</span> <span class="c1">#so that the lines would extend through landmarks</span>
+</span><span class='line'>
+</span><span class='line'>ggCirc <span class="o">&lt;-</span> ggCirc <span class="o">+</span> geom_segment<span class="p">(</span>data <span class="o">=</span> linesAng<span class="p">,</span> aes<span class="p">(</span>x <span class="o">=</span> x1<span class="p">,</span> y <span class="o">=</span> y1<span class="p">,</span> xend <span class="o">=</span> x3<span class="p">,</span> yend <span class="o">=</span> y3<span class="p">),</span> colour <span class="o">=</span> <span class="s">&quot;lightblue&quot;</span><span class="p">,</span> size <span class="o">=</span> <span class="m">1</span><span class="p">)</span>
+</span><span class='line'>ggCirc <span class="o">&lt;-</span> ggCirc <span class="o">+</span> geom_point<span class="p">(</span>size <span class="o">=</span> <span class="m">4.2</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;orange&quot;</span><span class="p">,</span> data <span class="o">=</span> data.frame<span class="p">(</span>mshapeCap<span class="p">),</span> aes<span class="p">(</span>x<span class="o">=</span>X1<span class="p">,</span> y <span class="o">=</span> X2<span class="p">))</span>
+</span><span class='line'>ggCirc <span class="o">&lt;-</span> ggCirc <span class="o">+</span> geom_text<span class="p">(</span>data <span class="o">=</span> data.frame<span class="p">(</span>mshapeCap<span class="p">),</span> aes<span class="p">(</span>x<span class="o">=</span>X1<span class="p">,</span> y <span class="o">=</span> X2<span class="p">,</span> label <span class="o">=</span> c<span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">16</span><span class="p">)),</span> vjust <span class="o">=</span> <span class="m">-1.2</span><span class="p">)</span>
+</span><span class='line'>ggCirc <span class="o">&lt;-</span> ggCirc <span class="o">+</span> coord_cartesian<span class="p">(</span>xlim<span class="o">=</span> c<span class="p">(</span><span class="m">-0.55</span><span class="p">,</span> <span class="m">0.55</span><span class="p">),</span> ylim<span class="o">=</span> c<span class="p">(</span><span class="m">-0.55</span><span class="p">,</span> <span class="m">0.55</span><span class="p">))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> <br/>
+<img class="center" src="/images/AnglesLandmarks.png" width="500" height="478" title="'Landmarks polar angles'" ></p>
+
+<p><em>ggplot2</em> has one great geom, polar_angle() that will transform any shape, from Cartesian to polar coordinates. Unfortunately it does not give polar angles as well, but the plot is informative (Figure 2), since landmarks are ordered according to their angular deviation from 0, i.e. the X and Y axes defining the 0.5 centroid-centered ellipse.</p>
+
+<figure class='code'><figcaption><span>Polar coordinate system in ggplot2</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>ggPolar <span class="o">&lt;-</span> ggplot<span class="p">(</span>data.frame<span class="p">(</span>mshapeCap<span class="p">),</span> aes<span class="p">(</span>x<span class="o">=</span>X1<span class="p">,</span> y<span class="o">=</span>X2<span class="p">))</span> <span class="o">+</span> geom_point<span class="p">(</span>size <span class="o">=</span> <span class="m">4.2</span><span class="p">,</span> color <span class="o">=</span> <span class="s">&quot;orange&quot;</span><span class="p">)</span>
+</span><span class='line'>ggPolar <span class="o">&lt;-</span> ggPolar <span class="o">+</span> geom_text<span class="p">(</span>aes<span class="p">(</span>label <span class="o">=</span> c<span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">16</span><span class="p">)),</span> vjust <span class="o">=</span> <span class="m">1.5</span><span class="p">)</span>
+</span><span class='line'>ggPolar <span class="o">&lt;-</span> ggPolar <span class="o">+</span> coord_polar<span class="p">(</span>start <span class="o">=</span> <span class="m">0</span><span class="p">)</span> <span class="o">+</span> xlab<span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">)</span> <span class="o">+</span> ylab<span class="p">(</span><span class="s">&quot;y&quot;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="/images/AnglesPolar.png" width="500" height="436" title="'Landmarks polar coordinate system'" ></p>
+
+<p>Polar angles can be calculated by using the atan2 (arctangent) function, which takes two parameters, x and y and gives one point estimate of the polar angle in radians. This number is really the angle between the positive x-axis of a plane (X from Figure 1) and the point given by its xy coordinates. Since after superimposition the x-axis lies at zero for all landmark configurations, it would be sufficent to use only xy coodinates of landmarks, since centroids are also at 0.</p>
+
+<figure class='code'><figcaption><span>Polar angles with atan2 function</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>polarAngler <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>A<span class="p">)</span> <span class="c1">#function to calculate polar angles from the array</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  siz <span class="o">&lt;-</span> dim<span class="p">(</span>A<span class="p">)[</span><span class="m">3</span><span class="p">]</span>
+</span><span class='line'>  len <span class="o">&lt;-</span> dim<span class="p">(</span>A<span class="p">)[</span><span class="m">1</span><span class="p">]</span>
+</span><span class='line'>  polarAngles <span class="o">&lt;-</span> vector<span class="p">(</span><span class="s">&quot;list&quot;</span><span class="p">,</span> siz<span class="p">)</span>
+</span><span class='line'>  <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span>siz<span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    temp <span class="o">&lt;-</span> atan2<span class="p">(</span>A<span class="p">[,</span><span class="m">2</span><span class="p">,</span>i<span class="p">],</span> A<span class="p">[,</span><span class="m">1</span><span class="p">,</span>i<span class="p">])</span>
+</span><span class='line'>    polarAngles<span class="p">[[</span>i<span class="p">]]</span> <span class="o">&lt;-</span> temp
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  polarAngles <span class="o">&lt;-</span> array<span class="p">(</span>unlist<span class="p">(</span>polarAngles<span class="p">),</span> dim <span class="o">=</span> c<span class="p">(</span>len<span class="p">,</span><span class="m">1</span><span class="p">,</span>siz<span class="p">))</span>
+</span><span class='line'>  <span class="kr">return</span><span class="p">(</span>polarAngles<span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>library<span class="p">(</span>circular<span class="p">)</span>
+</span><span class='line'>library<span class="p">(</span>colortools<span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>pAngles <span class="o">&lt;-</span> polarAngler<span class="p">(</span>capCoords<span class="p">)</span> <span class="c1">#angles for all configurations</span>
+</span><span class='line'>mAngles <span class="o">&lt;-</span> apply<span class="p">(</span>pAngles<span class="p">,</span> <span class="m">1</span><span class="p">,</span> mean<span class="p">)</span> <span class="c1">#mean angles for each landmark</span>
+</span><span class='line'>col1 <span class="o">&lt;-</span> pals<span class="p">(</span><span class="s">&quot;fish&quot;</span><span class="p">)</span> <span class="c1">#paletes from colortools</span>
+</span><span class='line'>col2 <span class="o">&lt;-</span> pals<span class="p">(</span><span class="s">&quot;ocean&quot;</span><span class="p">)</span>
+</span><span class='line'>col3 <span class="o">&lt;-</span> pals<span class="p">(</span><span class="s">&quot;mystery&quot;</span><span class="p">)</span>
+</span><span class='line'>colorPoint <span class="o">&lt;-</span> c<span class="p">(</span>col1<span class="p">,</span> col2<span class="p">,</span> col3<span class="p">,</span> <span class="s">&quot;#9A76F5&quot;</span><span class="p">)</span> <span class="c1">#16 colors for landmarks in whell</span>
+</span><span class='line'>
+</span><span class='line'>plot.circular<span class="p">(</span>circular<span class="p">(</span>t<span class="p">(</span>mAngles<span class="p">),</span> type <span class="o">=</span> <span class="s">&quot;angles&quot;</span><span class="p">),</span> sep <span class="o">=</span> <span class="m">0.0003</span><span class="p">,</span> col <span class="o">=</span> colorPoint<span class="p">,</span> cex <span class="o">=</span> <span class="m">1.5</span><span class="p">)</span>
+</span><span class='line'>legend<span class="p">(</span><span class="m">0.3</span><span class="p">,</span><span class="m">0.6</span><span class="p">,</span> legend <span class="o">=</span> <span class="m">1</span><span class="o">:</span><span class="m">16</span><span class="p">,</span> fill <span class="o">=</span> colorPoint<span class="p">,</span> cex <span class="o">=</span> <span class="m">0.7</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p><img class="center" src="/images/AnglesMean.png" width="500" height="436" title="'Landmarks ordered by angles'" ></p>
+
+<p>Figure 3 shows the distribution of landmarks from along a circular path (0,     π). It is obvious that landmarks form two distinct groups, one above, and one below the x-axis, with the exception of landmarks 7, 8 and 10 which are the most parallel to the x-axis. The proportion of the overall shape variability left in these angles must be thouroghly checked, but it is not easy, since angle-data can not be analysed by conventional statistics, but by circular or compositional methods. R provides some libraries for this, <em>circular</em> and <em>CircStats</em> which are both derived from the book of Jammalamadaka and Sengupta, &ldquo;Topics in circular Statistics&rdquo; from 2001. If one more individual is added to the circle-plot (Figure 3) it can be can visually inspected how much its coordinates (landmark polar angles) deviate from the sample mean (Figure 4).</p>
+
+<figure class='code'><figcaption><span>Adding individual 10 to circular plot</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>ce <span class="o">&lt;-</span> circular<span class="p">(</span>rbind<span class="p">(</span>t<span class="p">(</span>mAngles<span class="p">),</span> pAngles<span class="p">[,,</span><span class="m">10</span><span class="p">]))</span> <span class="c1">#deviation of individual 10 from the mean</span>
+</span><span class='line'>plot.circular<span class="p">(</span>ce<span class="p">,</span> sep <span class="o">=</span> <span class="m">0.0003</span><span class="p">,</span> col <span class="o">=</span> colorPoint<span class="p">,</span> cex <span class="o">=</span> <span class="m">1.5</span><span class="p">)</span>
+</span><span class='line'>legend<span class="p">(</span><span class="m">0.3</span><span class="p">,</span><span class="m">0.6</span><span class="p">,</span> legend <span class="o">=</span> <span class="m">1</span><span class="o">:</span><span class="m">16</span><span class="p">,</span> fill <span class="o">=</span> colorPoint<span class="p">,</span> cex <span class="o">=</span> <span class="m">0.7</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="/images/AnglesMean2.png" width="500" height="436" title="'Landmarks ordered by angles + 10'" ></p>
+
+<p> Some variablity is present around landmarks 10, 6 and 5, while others are nearly or completely overlapping. The variability may not be large, but it will be checked in future posts, as well as possible PCA with the angular data.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Miloš Blagojević</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-09T17:28:06+02:00" pubdate data-updated="true">Jun 9<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/r/'>R</a>, <a class='category' href='/blog/categories/morphometrics/'>morphometrics</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://paulidealiste.github.io/blog/2014/06/09/simple-angles-and-nice-plots/" data-via="" data-counturl="http://paulidealiste.github.io/blog/2014/06/09/simple-angles-and-nice-plots/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/05/17/complete-procrustes-in-python/" title="Previous Post: Complete Procrustes in Python">&laquo; Complete Procrustes in Python</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <img class="center none" src="/images/roehead.png" width="207" height="347" title="'Roe deer'" >
+<center>I am an adventurer in the <font color = "#0099FF">wonderful world</font> of biological shape analysis. Mostly this blog includes posts about R and python routines for doing shape analyses and displaying beautiful results.</center>  
+<center>E-mail me at <a href="mailto:paulidealiste@gmail.com"><font color = "orange">paulidealiste@gmail.com</font></a></center>
+<p></p>
+<center><script src="//platform.linkedin.com/in.js" type="text/javascript">
+  lang: en_US
+</script>
+<script type="IN/Share" data-url="http://creativemorphometrics.co.vu/"></script></center><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/06/09/simple-angles-and-nice-plots/">Simple Angles and Nice Plots</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/17/complete-procrustes-in-python/">Complete Procrustes in Python</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/03/modularity-graphs-and-triangulations/">Modularity, Graphs and Triangulations</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/04/04/delaunay-triangulation-for-modularity-pt-1/">Delaunay Triangulation Experiment</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/27/extracting-climate-data-in-r/">Extracting Climate Data in R</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Miloš Blagojević -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
