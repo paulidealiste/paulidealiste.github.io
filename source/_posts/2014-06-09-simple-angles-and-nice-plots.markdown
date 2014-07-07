@@ -8,7 +8,7 @@ keywords: "R, Polar angle, circular"
 description: "This post shows simple calculation of polar angle, after superimposition"
 ---
 
-Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in "Geometric morphometrics in R" by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the *polarRotator* function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.
+Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998[^1]. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in "Geometric morphometrics in R" by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the *polarRotator* function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.
 
 ```r Plotting the circle, centroid axes and mean configuration
 library(geomorph)
@@ -102,3 +102,5 @@ legend(0.3,0.6, legend = 1:16, fill = colorPoint, cex = 0.7)
 {% img center /images/AnglesMean2.png 500 436 'Landmarks ordered by angles + 10' %}
  
  Some variablity is present around landmarks 10, 6 and 5, while others are nearly or completely overlapping. The variability may not be large, but it will be checked in future posts, as well as possible PCA with the angular data.   
+
+[^1]: Rao C.R. and S. Suryawanshi. 1998. Statistical analysis of shape of objects based on landmark data. *PNAS* **93**: 12132-12136.

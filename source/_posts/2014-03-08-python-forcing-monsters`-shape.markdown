@@ -65,7 +65,7 @@ plt.legend(loc = "lower left")
 {% img center /images/example1preProc.png 616 462 'pre Procrustes 1' %}
 {% img center /images/example2preProc.png 616 457 'pre Procrustes 2' %}
 
-Procrustes superimposition revolves around three features of shape extraction, that is invariance of landmark configurations to position, scale and rotation. There are a number of excelent textbooks about the mathematics and logic, as well as procedures for Procrustes superimposition (Bookstein, 1991, Dryden and Mardia, 1998, Zelditch et al., 2012), but for this post direct inspiration was *Morphometrics in R* (Claude, 2008), especially with the basic procedure presented in the following function definition.
+Procrustes superimposition revolves around three features of shape extraction, that is invariance of landmark configurations to position, scale and rotation. There are a number of excelent textbooks about the mathematics and logic, as well as procedures for Procrustes superimposition (Bookstein, 1991[^1], Dryden and Mardia, 1998[^2], Zelditch et al., 2012[^3]), but for this post direct inspiration was *Morphometrics in R* (Claude, 2008), especially with the basic procedure presented in the following function definition.
 
 ```r Partial Procrustes superimposition of two configurations
 
@@ -122,3 +122,7 @@ plt.legend(loc = "lower left")
 {% img center /images/example2Proc.png 616 452 'Procrustes monster 2' %}
 
 Following posts should continue on this one and describe how the partial Procrustes superimposition for multilple configurations can be performed with fabulous sientific python.
+
+[^1]: Bookstein, F.L. 1991. Morphometric tools for landmark data: Geometry and Biology. Cambridge University press, Cambridge, UK.
+[^2]: Dryden, I.E. and K.V. Mardia. 1998. Statistical shape analysis. Wiley, Chichester, UK.
+[^3]: Zelditch, M.L., Swidersk, D.L. and H.D. Sheets. 2012. Geometric morphometrics for biologists: A primer. Second edition, Elsevier. 

@@ -73,12 +73,10 @@ plot(graph, vertex.size = 20, vertex.shape = "circle")
 legend(0.8,1.4, legend = c("neural crest", "somitomere"), fill = colormap)
 ```
 
-Leading eigenvector community algorithm tries to find community structure in the graph by calculating the eigenvector of the modularity matrix for the largest positive eigenvalue and then separating vertices into two communities based on the sign of the corresponding element in the eigenvector (Newman, 2006). This method was preffered over many others because it is closer to usual multivariate methods, such as PCA, that are commonly used to depict variability patterns.
+Leading eigenvector community algorithm tries to find community structure in the graph by calculating the eigenvector of the modularity matrix for the largest positive eigenvalue and then separating vertices into two communities based on the sign of the corresponding element in the eigenvector (Newman, 2006[^1]). This method was preffered over many others because it is closer to usual multivariate methods, such as PCA, that are commonly used to depict variability patterns.
 
 {% img center /images/modularityGraph.png 541 467 'Modularity graph' %}
 
 Graph community strucure depicts modularity in the landmark configurations accurately, with the exception of lm16, that is positioned on the posterior basicranium. Higher correlations are, on average, present within modules while between modules, only one connection is higher than 0.5, that between lm2 and lm14. Since these landmarks lay on the opposite sides of the cranium, they may encompass the variability in total anterior-posterior length. i.e. cranial size.
 
-
-
-
+[^1]: Newman, M.E.J. 2006. Modularity and community structure in networks. *PNAS* **103**: 8577-8582.
