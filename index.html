@@ -75,6 +75,193 @@
       
   <header>
     
+      <h1 class="entry-title"><a href="/blog/2014/07/07/python-project-and-explore/">Python Project and Explore</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-07T17:21:08+02:00" pubdate data-updated="true">Jul 7<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Since Procrustes superimposition introduces the data into a curved shape space which corresponds to a hyperhemisphere of radius 1 with numerous dimensions (as defined by Rohlf, 1999<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>), usual multivariate statistical methods are not readily applicable to such data. This data must be projected to a flat, Euclidean tangent space, that is in contact with the hyperhemisphere in one point, taken as a mean shape of the whole dataset. This projection can be applied only if the variation in shapes in not overtly large so that their &ldquo;shadows&rdquo; on a flat space are not too far apart. In this post, data will be generated as usual and Procrustes procedures will be taken from previous posts, using defined functions <em>centsiz</em>, <em>transScale</em>, <em>mshapr</em>, <em>pProc</em> and <em>pGP</em>.</p>
+
+<figure class='code'><figcaption><span>Importing libraries, generating data and utility functions</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">Pycluster</span> <span class="kn">as</span> <span class="nn">pyc</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">brewer2mpl</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="kn">import</span> <span class="n">Axes3D</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">sklearn.decomposition</span> <span class="kn">import</span> <span class="n">PCA</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">coordstest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span> <span class="mi">210</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>    <span class="c">#slightly larger variation</span>
+</span><span class='line'>                        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">175</span><span class="p">,</span> <span class="mi">210</span><span class="p">,</span> <span class="mi">10</span><span class="p">)])</span><span class="o">.</span><span class="n">T</span>
+</span><span class='line'><span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">coordstest</span><span class="p">[</span><span class="n">i</span><span class="p">,:],</span> <span class="p">[[</span><span class="mi">10</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]],</span> <span class="mi">200</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)])</span>
+</span><span class='line'><span class="n">coordinates</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> <span class="c">#coordinates column</span>
+</span><span class='line'><span class="n">individuals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">200</span><span class="p">),</span><span class="mi">10</span><span class="p">)</span> <span class="c">#individuals column</span>
+</span><span class='line'><span class="n">allCoords</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
+</span><span class='line'><span class="n">allCoords</span><span class="p">[</span><span class="s">&#39;coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coordinates</span>
+</span><span class='line'><span class="n">allCoords</span><span class="p">[</span><span class="s">&#39;individuals&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">individuals</span>
+</span><span class='line'><span class="n">allCoords</span> <span class="o">=</span> <span class="n">allCoords</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(</span><span class="n">by</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;individuals&#39;</span><span class="p">,</span><span class="s">&#39;coordinates&#39;</span><span class="p">])</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After Procrustes superimposition, data can be projected orthogonally and stereographically. More common method is the orthogonal projection which minimizes lagre shape differences between landmark configurations. The procedure is based on Rohlf, 1999, suggesting that the matrix of aligned centered preshapes should be multiplied by the mean shape of unit centroid size, subtracted from the identity matrix of comparable dimensionality (Claude, 2008).</p>
+
+<figure class='code'><figcaption><span>Orthogonal projection of superimposed data, Procrustes superimposition and projection</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">ortproj</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">numland</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">numind</span><span class="p">):</span> <span class="c">#where A is a pandas dataframe (tempCoords), numind =  landmarks, numind =  individuals</span>
+</span><span class='line'>  <span class="n">mshape</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">mshStd</span> <span class="o">=</span> <span class="n">mshape</span><span class="o">/</span><span class="n">centsize</span><span class="p">(</span><span class="n">mshape</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">mshMel</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">melt</span><span class="p">(</span><span class="n">mshStd</span><span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s">&#39;variable&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+</span><span class='line'>  <span class="c">#mshRep = pd.concat([mshMel]*numind, ignore_index = True) #calculate repeating size standardized meanShape</span>
+</span><span class='line'>  <span class="n">mshRep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="n">numind</span><span class="p">,</span><span class="mi">1</span><span class="p">]),</span> <span class="n">mshMel</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">simDia</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">numland</span> <span class="o">*</span> <span class="n">dim</span><span class="p">)</span> <span class="c">#identity matrix</span>
+</span><span class='line'>  <span class="c">#lonWid = A[[&quot;x&quot;,&quot;y&quot;]].values.reshape(numind,numland*dim) #must have column names &quot;x&quot; and &quot;y&quot; for coordinates</span>
+</span><span class='line'>  <span class="n">lonWidX</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">numind</span><span class="p">,</span><span class="n">numland</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">lonWidY</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="s">&quot;y&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">numind</span><span class="p">,</span><span class="n">numland</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">lonWid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">lonWidX</span><span class="p">,</span> <span class="n">lonWidY</span><span class="p">),</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">temp1</span> <span class="o">=</span> <span class="n">simDia</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">mshMel</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">mshMel</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">Xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">lonWid</span><span class="p">,</span> <span class="n">temp1</span><span class="p">)</span> <span class="c">#orthogonal according to Rholf</span>
+</span><span class='line'>  <span class="n">Xproj</span> <span class="o">=</span> <span class="n">Xi</span> <span class="o">+</span> <span class="n">mshRep</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">Xproj</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">procCoords</span> <span class="o">=</span> <span class="n">pGP</span><span class="p">(</span><span class="n">allCoords</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span> <span class="c">#perform Procrustes superimposition</span>
+</span><span class='line'><span class="n">procoordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">),</span><span class="mi">200</span><span class="p">)</span>
+</span><span class='line'><span class="n">procindividuals</span> <span class="o">=</span> <span class="n">allCoords</span><span class="p">[</span><span class="s">&#39;individuals&#39;</span><span class="p">]</span>
+</span><span class='line'><span class="n">procCoords</span><span class="p">[</span><span class="s">&#39;coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">procoordinates</span>
+</span><span class='line'><span class="n">procCoords</span><span class="p">[</span><span class="s">&#39;individuals&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sort</span><span class="p">(</span><span class="n">procindividuals</span><span class="p">)</span>
+</span><span class='line'><span class="n">projCoords</span> <span class="o">=</span> <span class="n">ortproj</span><span class="p">(</span><span class="n">procCoords</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span> <span class="c">#perform orthogonal projection</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Numpy array projCoords holds wide representation of projected data (rows are individuals, while columns are all landmarks, first all x and then y coordinates), ready to be used in PCA or any other multivariate method. In order to illustrate potential grouping in PCA morphospace, since the data is randomly generated, a kmeans clustering will be performed with 3 groups, just to effectively split the data. PCA can be done in python in numerous ways, but in this post a PCA decomposition from <em>scikit-learn</em> package is used.</p>
+
+<figure class='code'><figcaption><span>PCA, cluster analysis and plots</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">pca</span> <span class="o">=</span> <span class="n">PCA</span><span class="p">(</span><span class="n">n_components</span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span>
+</span><span class='line'><span class="n">pca</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">projCoords</span><span class="p">)</span>
+</span><span class='line'><span class="k">print</span><span class="p">(</span><span class="n">pca</span><span class="o">.</span><span class="n">explained_variance_ratio_</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">projCoordsP</span> <span class="o">=</span> <span class="n">pca</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">projCoords</span><span class="p">)</span> <span class="c">#get the individual scores on PC axes</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">clusters</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">pyc</span><span class="o">.</span><span class="n">kcluster</span><span class="p">(</span><span class="n">projCoordsP</span><span class="p">,</span> <span class="n">nclusters</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="n">dist</span> <span class="o">=</span> <span class="s">&#39;e&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+</span><span class='line'><span class="n">set2</span> <span class="o">=</span> <span class="n">brewer2mpl</span><span class="o">.</span><span class="n">get_map</span><span class="p">(</span><span class="s">&#39;RdYlBu&#39;</span><span class="p">,</span> <span class="s">&#39;diverging&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">mpl_colors</span> <span class="c">#generate nice colors</span>
+</span><span class='line'><span class="n">projCoordsPa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">projCoordsP</span><span class="p">,</span> <span class="n">clusters</span><span class="p">))</span> <span class="c">#concatenate all for sequential plot-building</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">group1PCA</span> <span class="o">=</span> <span class="n">projCoordsPa</span><span class="p">[</span><span class="n">projCoordsPa</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="c">#split by group for sequential plot-building</span>
+</span><span class='line'><span class="n">group2PCA</span> <span class="o">=</span> <span class="n">projCoordsPa</span><span class="p">[</span><span class="n">projCoordsPa</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span>
+</span><span class='line'><span class="n">group3PCA</span> <span class="o">=</span> <span class="n">projCoordsPa</span><span class="p">[</span><span class="n">projCoordsPa</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">]</span>
+</span><span class='line'><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+</span><span class='line'><span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s">&#39;3d&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">group1PCA</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">group1PCA</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">group1PCA</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;o&#39;</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">set2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s">&#39;Group1&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">group2PCA</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">group2PCA</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">group2PCA</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;o&#39;</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">set2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s">&#39;Group2&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">group3PCA</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">group3PCA</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">group3PCA</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;o&#39;</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">set2</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="s">&#39;Group3&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s">&quot;PCA with grouping according to kmeans 3 group solution&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s">&#39;upper left&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s">&#39;PC1 (14.45%)&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&#39;PC2 (13.29%)&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">ax</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s">&#39;PC3 (12.46%)&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Since the data is randomly generated, there is not much structured variation in it, as three of the first PC axes describe 14.45%, 13.29% and 12.46% of total sample variability, respectively. On the other hand, kmeans forces the data into three groups, which is useful for demonstration of plotting in matplotlib with 3D axes, and a groupping structure in PCA scatterplots (Figure 1), similar to real-world data.</p>
+
+<p><img class="center" src="/images/TDPCAscatter.png" width="650" height="484" title="'PCA of projected and superimposed data'" ></p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Rohlf, J.F. 1999. Shape statistics: Procrustes superimpositions and tangent spaces. <em>Journal of Classification</em> <strong>16</strong>: 197-223.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h1 class="entry-title"><a href="/blog/2014/06/09/simple-angles-and-nice-plots/">Simple Angles and Nice Plots</a></h1>
     
     
@@ -98,7 +285,7 @@
   </header>
 
 
-  <div class="entry-content"><p>Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in &ldquo;Geometric morphometrics in R&rdquo; by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the <em>polarRotator</em> function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.</p>
+  <div class="entry-content"><p>Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in &ldquo;Geometric morphometrics in R&rdquo; by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the <em>polarRotator</em> function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.</p>
 
 <figure class='code'><figcaption><span>Plotting the circle, centroid axes and mean configuration</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -260,6 +447,14 @@
 <p><img class="center" src="/images/AnglesMean2.png" width="500" height="436" title="'Landmarks ordered by angles + 10'" ></p>
 
 <p> Some variablity is present around landmarks 10, 6 and 5, while others are nearly or completely overlapping. The variability may not be large, but it will be checked in future posts, as well as possible PCA with the angular data.</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Rao C.R. and S. Suryawanshi. 1998. Statistical analysis of shape of objects based on landmark data. <em>PNAS</em> <strong>93</strong>: 12132-12136.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
 </div>
   
   
@@ -746,11 +941,19 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Leading eigenvector community algorithm tries to find community structure in the graph by calculating the eigenvector of the modularity matrix for the largest positive eigenvalue and then separating vertices into two communities based on the sign of the corresponding element in the eigenvector (Newman, 2006). This method was preffered over many others because it is closer to usual multivariate methods, such as PCA, that are commonly used to depict variability patterns.</p>
+<p>Leading eigenvector community algorithm tries to find community structure in the graph by calculating the eigenvector of the modularity matrix for the largest positive eigenvalue and then separating vertices into two communities based on the sign of the corresponding element in the eigenvector (Newman, 2006<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>). This method was preffered over many others because it is closer to usual multivariate methods, such as PCA, that are commonly used to depict variability patterns.</p>
 
 <p><img class="center" src="/images/modularityGraph.png" width="541" height="467" title="'Modularity graph'" ></p>
 
 <p>Graph community strucure depicts modularity in the landmark configurations accurately, with the exception of lm16, that is positioned on the posterior basicranium. Higher correlations are, on average, present within modules while between modules, only one connection is higher than 0.5, that between lm2 and lm14. Since these landmarks lay on the opposite sides of the cranium, they may encompass the variability in total anterior-posterior length. i.e. cranial size.</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Newman, M.E.J. 2006. Modularity and community structure in networks. <em>PNAS</em> <strong>103</strong>: 8577-8582.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
 </div>
   
   
@@ -1149,7 +1352,7 @@
 <p><img class="center" src="/images/example1preProc.png" width="616" height="462" title="'pre Procrustes 1'" >
 <img class="center" src="/images/example2preProc.png" width="616" height="457" title="'pre Procrustes 2'" ></p>
 
-<p>Procrustes superimposition revolves around three features of shape extraction, that is invariance of landmark configurations to position, scale and rotation. There are a number of excelent textbooks about the mathematics and logic, as well as procedures for Procrustes superimposition (Bookstein, 1991, Dryden and Mardia, 1998, Zelditch et al., 2012), but for this post direct inspiration was <em>Morphometrics in R</em> (Claude, 2008), especially with the basic procedure presented in the following function definition.</p>
+<p>Procrustes superimposition revolves around three features of shape extraction, that is invariance of landmark configurations to position, scale and rotation. There are a number of excelent textbooks about the mathematics and logic, as well as procedures for Procrustes superimposition (Bookstein, 1991<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>, Dryden and Mardia, 1998<sup id="fnref:2"><a href="#fn:2" rel="footnote">2</a></sup>, Zelditch et al., 2012<sup id="fnref:3"><a href="#fn:3" rel="footnote">3</a></sup>), but for this post direct inspiration was <em>Morphometrics in R</em> (Claude, 2008), especially with the basic procedure presented in the following function definition.</p>
 
 <figure class='code'><figcaption><span>Partial Procrustes superimposition of two configurations</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -1247,6 +1450,18 @@
 <img class="center" src="/images/example2Proc.png" width="616" height="452" title="'Procrustes monster 2'" ></p>
 
 <p>Following posts should continue on this one and describe how the partial Procrustes superimposition for multilple configurations can be performed with fabulous sientific python.</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Bookstein, F.L. 1991. Morphometric tools for landmark data: Geometry and Biology. Cambridge University press, Cambridge, UK.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+<li id="fn:2">
+<p>Dryden, I.E. and K.V. Mardia. 1998. Statistical shape analysis. Wiley, Chichester, UK.<a href="#fnref:2" rev="footnote">&#8617;</a></p></li>
+<li id="fn:3">
+<p>Zelditch, M.L., Swidersk, D.L. and H.D. Sheets. 2012. Geometric morphometrics for biologists: A primer. Second edition, Elsevier. <a href="#fnref:3" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
 </div>
   
   
@@ -1622,117 +1837,9 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/01/09/colorful-outlines-for-shape-comparison/">Colorful Outlines for Shape Comparison</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-01-09T19:55:01+01:00" pubdate data-updated="true">Jan 9<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>This procedure is based on the outlines generated from the digital photos using imageJ and converting imageJ images to x-y continuous outline data available from <a href="http://goo.gl/TYSzf0" target="_blank">here</a>. Its goal is to present a visual overview of global shape differences between individuals from natural populations, using landmark data from ventral projection of their crania. All outlines are based on deformation via Thin Plate Splines, using mean shapes for populations as deformation targets and references. Superimposition methods as well as preliminary GM analyses were done in R and marvelous <em>geomorph</em> package by Dean Adams and Erik Otarola-Castillo. Additionally, since one of the common points of contemporary scientific research is the reproducibility of solutions offered all posts will also contain randomly generated sample data that could be used similarly to real-world datasets. Sample generation can be very useful, especially in teaching, so I intend to focus on it in future posts.</p>
-
-<figure class='code'><figcaption><span>Importing libraries and generating the basic dataset (files should be placed in your working directory)</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='r'><span class='line'>library<span class="p">(</span>geomorph<span class="p">)</span>
-</span><span class='line'>library<span class="p">(</span>ggplot2<span class="p">)</span>
-</span><span class='line'>library<span class="p">(</span>Morpho<span class="p">)</span>
-</span><span class='line'>d <span class="o">&lt;-</span> read.table<span class="p">(</span><span class="s">&quot;ventralnoOutlineCap.txt&quot;</span><span class="p">)</span> <span class="c1">#outline data</span>
-</span><span class='line'>load<span class="p">(</span><span class="s">&quot;capreolusRgen.RData&quot;</span><span class="p">)</span>
-</span><span class='line'>capreolusArray <span class="o">&lt;-</span> capreolusSample1 <span class="c1">#or capreolusSample2-5</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The workspace &ldquo;capreolusRgen.RData&rdquo; (which can be downloaded from <a href="http://goo.gl/4uKerX" target="_blank">here</a>) contains several randomly generated datasetes of 657 individuals and 28 landmarks, named &ldquo;capreolusSample#&rdquo;. These data was generated on the basis of real-world values, using the linear regression model to control random number generators. The code that was used probably does not repoduce the sampling of landmarks well, especially regarding correlations between pairs of landmark coordinates or the landmarks that conform to the object symmetry, but for the purpose of illustration in this post, I hope they should be fine.</p>
-
-<figure class='code'><figcaption><span>Procrustes superimposition</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='r'><span class='line'>capreolusGPA <span class="o">&lt;-</span> gpagen<span class="p">(</span>capreolusArray<span class="p">,</span> ShowPlot <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
-</span><span class='line'>pop <span class="o">&lt;-</span> sample<span class="p">(</span><span class="m">3</span><span class="p">,</span> <span class="m">657</span><span class="p">,</span> replace <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span> <span class="c1">#generate random 3 population partition</span>
-</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">1</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop1&quot;</span>
-</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">2</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop2&quot;</span>
-</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">3</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop3&quot;</span>
-</span><span class='line'>capreolus <span class="o">&lt;-</span> capreolusGPA<span class="o">$</span>coords <span class="c1">#extract landmark coordinates</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Following the Procrustes superimposition is the calculation of mean shapes, both for all males and for separate populations. After mean shapes are calculated the only thing left is to use TPS in order to deform outlines (variable d), using mean shape of all males as a reference and mean shape of populations as target. This can all be done using <em>Morpho</em> R-package from Stefan Schlager.</p>
-
-<figure class='code'><figcaption><span>Mean shapes and TPS deformations</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='r'><span class='line'>meanCap <span class="o">&lt;-</span> mshape<span class="p">(</span>capreolus<span class="p">)</span>
-</span><span class='line'>meanPop1 <span class="o">&lt;-</span> mshape<span class="p">(</span>capreolus<span class="p">[,,</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="s">&quot;pop1&quot;</span><span class="p">)])</span> <span class="c1">#by population</span>
-</span><span class='line'>meanPop2 <span class="o">&lt;-</span> mshape<span class="p">(</span>capreolus<span class="p">[,,</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="s">&quot;pop2&quot;</span><span class="p">)])</span>
-</span><span class='line'>meanPop3 <span class="o">&lt;-</span> mshape<span class="p">(</span>capreolus<span class="p">[,,</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="s">&quot;pop3&quot;</span><span class="p">)])</span>
-</span><span class='line'>pop1 <span class="o">&lt;-</span> data.frame<span class="p">(</span>tps3d<span class="p">(</span>as.matrix<span class="p">(</span>d<span class="p">),</span> meanCap<span class="p">,</span> meanPop1<span class="p">))</span> <span class="c1">#for each population</span>
-</span><span class='line'>pop2 <span class="o">&lt;-</span> data.frame<span class="p">(</span>tps3d<span class="p">(</span>as.matrix<span class="p">(</span>d<span class="p">),</span> meanCap<span class="p">,</span> meanPop2<span class="p">))</span>
-</span><span class='line'>pop3 <span class="o">&lt;-</span> data.frame<span class="p">(</span>tps3d<span class="p">(</span>as.matrix<span class="p">(</span>d<span class="p">),</span> meanCap<span class="p">,</span> meanPop3<span class="p">))</span>
-</span><span class='line'>capWhole <span class="o">&lt;-</span> rbind<span class="p">(</span>pop1<span class="p">,</span> pop2<span class="p">,</span> pop3<span class="p">)</span> <span class="c1">#combine data</span>
-</span><span class='line'>pops <span class="o">&lt;-</span> c<span class="p">(</span>rep<span class="p">(</span><span class="s">&quot;pop1&quot;</span><span class="p">,</span> <span class="m">2836</span><span class="p">),</span> rep<span class="p">(</span><span class="s">&quot;pop2&quot;</span><span class="p">,</span> <span class="m">2836</span><span class="p">),</span> rep<span class="p">(</span><span class="s">&quot;pop3&quot;</span><span class="p">,</span> <span class="m">2836</span><span class="p">))</span> <span class="c1">#outline has 2836 points</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Finally, depicting shape changes can be achieved by wonderful Hadley Wickham`s <em>ggplot2</em> R-package. This package has a neat way of &ldquo;forcing&rdquo; you to keep your data organized, so all variables are inside one data frame, both quantitative and qualitative.</p>
-
-<figure class='code'><figcaption><span>ggplot2 plotting of shape outline deformations</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='r'><span class='line'>wholeCap <span class="o">&lt;-</span> data.frame<span class="p">(</span>capWhole<span class="p">,</span> pops<span class="p">)</span> <span class="c1">#deformed outlines and population membership</span>
-</span><span class='line'>theme_set<span class="p">(</span>theme_bw<span class="p">())</span> <span class="c1">#change default ggplot theme to b&amp;w</span>
-</span><span class='line'>dplot <span class="o">&lt;-</span> ggplot<span class="p">(</span>wholeCap<span class="p">,</span> aes<span class="p">(</span>wholeCap<span class="p">[,</span><span class="m">1</span><span class="p">],</span>wholeCap<span class="p">[,</span><span class="m">2</span><span class="p">],</span> group <span class="o">=</span> pops<span class="p">))</span> <span class="c1">#initialize ggplot object</span>
-</span><span class='line'>dplot <span class="o">&lt;-</span> dplot <span class="o">+</span> geom_path<span class="p">(</span>size <span class="o">=</span> <span class="m">1</span><span class="p">,</span> aes<span class="p">(</span>color <span class="o">=</span> pops<span class="p">))</span> <span class="o">+</span> facet_grid<span class="p">(</span>.<span class="o">~</span>pops<span class="p">)</span> <span class="c1">#add layers</span>
-</span><span class='line'>dplot <span class="o">+</span> theme<span class="p">(</span>axis.title <span class="o">=</span> element_blank<span class="p">(),</span> axis.text <span class="o">=</span> element_blank<span class="p">(),</span> axis.ticks <span class="o">=</span> element_blank<span class="p">())</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><img class="center" src="/images/post1outline.png" width="616" height="546" title="'Outlines'" ></p>
-
-<p>By inspecting outlines it can be seen that the individuals from pop1 are the smallest while the ones from pop2 are the largest. Shape differences are also determined by the relationship of length to width, so that individuals from pop2 have the widest crania, while the ones from pop1 have the narrowest. Also, it can be seen that in the individuals with the largest crania, size differences are detemined mostly by dimensions of the anterior part, maxillary and rostral regions, that are both wider and longer with respect to individuals with smaller crania. Posterior part of the cranium is more similar between individuals from different populations, and it may be more stable.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
+    
+      <a class="prev" href="/blog/page/2/">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -1752,6 +1859,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/07/07/python-project-and-explore/">Python Project and Explore</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/06/09/simple-angles-and-nice-plots/">Simple Angles and Nice Plots</a>
       </li>
     
@@ -1765,10 +1876,6 @@
     
       <li class="post">
         <a href="/blog/2014/04/04/delaunay-triangulation-for-modularity-pt-1/">Delaunay Triangulation Experiment</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/03/27/extracting-climate-data-in-r/">Extracting Climate Data in R</a>
       </li>
     
   </ul>

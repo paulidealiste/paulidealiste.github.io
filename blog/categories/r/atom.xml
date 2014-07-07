@@ -4,7 +4,7 @@
   <title><![CDATA[Category: R | Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/blog/categories/r/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-06-09T18:49:34+02:00</updated>
+  <updated>2014-07-07T18:28:01+02:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -18,7 +18,7 @@
     <link href="http://paulidealiste.github.io/blog/2014/06/09/simple-angles-and-nice-plots/"/>
     <updated>2014-06-09T17:28:06+02:00</updated>
     <id>http://paulidealiste.github.io/blog/2014/06/09/simple-angles-and-nice-plots</id>
-    <content type="html"><![CDATA[<p>Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in &ldquo;Geometric morphometrics in R&rdquo; by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the <em>polarRotator</em> function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.</p>
+    <content type="html"><![CDATA[<p>Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in &ldquo;Geometric morphometrics in R&rdquo; by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the <em>polarRotator</em> function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.</p>
 
 <p>```r Plotting the circle, centroid axes and mean configuration
 library(geomorph)
@@ -115,6 +115,14 @@ legend(0.3,0.6, legend = 1:16, fill = colorPoint, cex = 0.7)
 <p><img class="center" src="/images/AnglesMean2.png" width="500" height="436" title="&lsquo;Landmarks ordered by angles + 10&rsquo;" ></p>
 
 <p> Some variablity is present around landmarks 10, 6 and 5, while others are nearly or completely overlapping. The variability may not be large, but it will be checked in future posts, as well as possible PCA with the angular data.</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Rao C.R. and S. Suryawanshi. 1998. Statistical analysis of shape of objects based on landmark data. <em>PNAS</em> <strong>93</strong>: 12132-12136.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
 ]]></content>
   </entry>
   
@@ -195,11 +203,19 @@ V(graph)$color &lt;&ndash; colormap[gsc$membership] #color graph vertices accord
 legend(0.8,1.4, legend = c(&ldquo;neural crest&rdquo;, &ldquo;somitomere&rdquo;), fill = colormap)
 ```</p>
 
-<p>Leading eigenvector community algorithm tries to find community structure in the graph by calculating the eigenvector of the modularity matrix for the largest positive eigenvalue and then separating vertices into two communities based on the sign of the corresponding element in the eigenvector (Newman, 2006). This method was preffered over many others because it is closer to usual multivariate methods, such as PCA, that are commonly used to depict variability patterns.</p>
+<p>Leading eigenvector community algorithm tries to find community structure in the graph by calculating the eigenvector of the modularity matrix for the largest positive eigenvalue and then separating vertices into two communities based on the sign of the corresponding element in the eigenvector (Newman, 2006<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>). This method was preffered over many others because it is closer to usual multivariate methods, such as PCA, that are commonly used to depict variability patterns.</p>
 
 <p><img class="center" src="/images/modularityGraph.png" width="541" height="467" title="&lsquo;Modularity graph&rsquo;" ></p>
 
 <p>Graph community strucure depicts modularity in the landmark configurations accurately, with the exception of lm16, that is positioned on the posterior basicranium. Higher correlations are, on average, present within modules while between modules, only one connection is higher than 0.5, that between lm2 and lm14. Since these landmarks lay on the opposite sides of the cranium, they may encompass the variability in total anterior-posterior length. i.e. cranial size.</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Newman, M.E.J. 2006. Modularity and community structure in networks. <em>PNAS</em> <strong>103</strong>: 8577-8582.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
 ]]></content>
   </entry>
   

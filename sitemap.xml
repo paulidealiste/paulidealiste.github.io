@@ -24,7 +24,7 @@
         <loc>
             http://paulidealiste.github.io/blog/2014/03/08/python-forcing-monsters%60-shape/
         </loc>
-        <lastmod>2014-03-28T00:21:08+01:00</lastmod>
+        <lastmod>2014-07-07T18:25:46+02:00</lastmod>
     </url>
     <url>
         <loc>http://paulidealiste.github.io/blog/2014/03/27/extracting-climate-data-in-r/</loc>
@@ -40,7 +40,7 @@
         <loc>
             http://paulidealiste.github.io/blog/2014/05/03/modularity-graphs-and-triangulations/
         </loc>
-        <lastmod>2014-05-03T15:40:17+02:00</lastmod>
+        <lastmod>2014-07-07T18:19:32+02:00</lastmod>
     </url>
     <url>
         <loc>http://paulidealiste.github.io/blog/2014/05/17/complete-procrustes-in-python/</loc>
@@ -48,11 +48,15 @@
     </url>
     <url>
         <loc>http://paulidealiste.github.io/blog/2014/06/09/simple-angles-and-nice-plots/</loc>
-        <lastmod>2014-06-09T18:47:55+02:00</lastmod>
+        <lastmod>2014-07-07T18:19:50+02:00</lastmod>
+    </url>
+    <url>
+        <loc>http://paulidealiste.github.io/blog/2014/07/07/python-project-and-explore/</loc>
+        <lastmod>2014-07-07T18:27:21+02:00</lastmod>
     </url>
     <url>
         <loc>http://paulidealiste.github.io/blog/archives/</loc>
-        <lastmod>2014-06-09T18:47:55+02:00</lastmod>
+        <lastmod>2014-07-07T18:27:21+02:00</lastmod>
     </url>
     <url>
         <loc>http://paulidealiste.github.io/robots.txt</loc>
@@ -68,6 +72,6 @@
     </url>
     <url>
         <loc>http://paulidealiste.github.io/</loc>
-        <lastmod>2014-06-09T18:47:55+02:00</lastmod>
+        <lastmod>2014-07-07T18:27:21+02:00</lastmod>
     </url>
 </urlset>

@@ -94,7 +94,7 @@
   </header>
 
 
-<div class="entry-content"><p>Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in &ldquo;Geometric morphometrics in R&rdquo; by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the <em>polarRotator</em> function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.</p>
+<div class="entry-content"><p>Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in &ldquo;Geometric morphometrics in R&rdquo; by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the <em>polarRotator</em> function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.</p>
 
 <figure class='code'><figcaption><span>Plotting the circle, centroid axes and mean configuration</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -256,6 +256,14 @@
 <p><img class="center" src="/images/AnglesMean2.png" width="500" height="436" title="'Landmarks ordered by angles + 10'" ></p>
 
 <p> Some variablity is present around landmarks 10, 6 and 5, while others are nearly or completely overlapping. The variability may not be large, but it will be checked in future posts, as well as possible PCA with the angular data.</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Rao C.R. and S. Suryawanshi. 1998. Statistical analysis of shape of objects based on landmark data. <em>PNAS</em> <strong>93</strong>: 12132-12136.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
 </div>
 
 
@@ -304,6 +312,8 @@
         <a class="basic-alignment left" href="/blog/2014/05/17/complete-procrustes-in-python/" title="Previous Post: Complete Procrustes in Python">&laquo; Complete Procrustes in Python</a>
       
       
+        <a class="basic-alignment right" href="/blog/2014/07/07/python-project-and-explore/" title="Next Post: Python project and explore">Python project and explore &raquo;</a>
+      
     </p>
   </footer>
 </article>
@@ -324,6 +334,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/07/07/python-project-and-explore/">Python Project and Explore</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/06/09/simple-angles-and-nice-plots/">Simple Angles and Nice Plots</a>
       </li>
     
@@ -337,10 +351,6 @@
     
       <li class="post">
         <a href="/blog/2014/04/04/delaunay-triangulation-for-modularity-pt-1/">Delaunay Triangulation Experiment</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/03/27/extracting-climate-data-in-r/">Extracting Climate Data in R</a>
       </li>
     
   </ul>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Morphometrics | Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/blog/categories/morphometrics/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-06-09T18:49:34+02:00</updated>
+  <updated>2014-07-07T18:28:01+02:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -14,11 +14,108 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Python Project and Explore]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/07/07/python-project-and-explore/"/>
+    <updated>2014-07-07T17:21:08+02:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/07/07/python-project-and-explore</id>
+    <content type="html"><![CDATA[<p>Since Procrustes superimposition introduces the data into a curved shape space which corresponds to a hyperhemisphere of radius 1 with numerous dimensions (as defined by Rohlf, 1999<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>), usual multivariate statistical methods are not readily applicable to such data. This data must be projected to a flat, Euclidean tangent space, that is in contact with the hyperhemisphere in one point, taken as a mean shape of the whole dataset. This projection can be applied only if the variation in shapes in not overtly large so that their &ldquo;shadows&rdquo; on a flat space are not too far apart. In this post, data will be generated as usual and Procrustes procedures will be taken from previous posts, using defined functions <em>centsiz</em>, <em>transScale</em>, <em>mshapr</em>, <em>pProc</em> and <em>pGP</em>.</p>
+
+<p>```python Importing libraries, generating data and utility functions
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import Pycluster as pyc
+import brewer2mpl
+from mpl_toolkits.mplot3d import Axes3D
+from sklearn.decomposition import PCA</p>
+
+<p>coordstest = np.vstack([np.random.uniform(175, 210, 10),    #slightly larger variation</p>
+
+<pre><code>                    np.random.uniform(175, 210, 10)]).T 
+</code></pre>
+
+<p>coords = np.vstack([np.random.multivariate_normal(coordstest[i,:], [[10,0],[0,1]], 200) for i in range(10)])
+coordinates = pd.Series((np.arange(0,10).reshape(-1,1)*np.ones(200).reshape(1,-1)).flatten()) #coordinates column
+individuals = np.tile(np.arange(0,200),10) #individuals column
+allCoords = pd.DataFrame(coords, columns = [&lsquo;x&rsquo;,&lsquo;y&rsquo;])
+allCoords[&lsquo;coordinates&rsquo;] = coordinates
+allCoords[&lsquo;individuals&rsquo;] = individuals
+allCoords = allCoords.sort_index(by = [&lsquo;individuals&rsquo;,&lsquo;coordinates&rsquo;])
+```
+After Procrustes superimposition, data can be projected orthogonally and stereographically. More common method is the orthogonal projection which minimizes lagre shape differences between landmark configurations. The procedure is based on Rohlf, 1999, suggesting that the matrix of aligned centered preshapes should be multiplied by the mean shape of unit centroid size, subtracted from the identity matrix of comparable dimensionality (Claude, 2008).</p>
+
+<p>```python Orthogonal projection of superimposed data, Procrustes superimposition and projection
+def ortproj(A, numland, dim, numind): #where A is a pandas dataframe (tempCoords), numind =  landmarks, numind =  individuals
+  mshape = A.iloc[:,0:2].groupby(A.iloc[:,2]).mean()
+  mshStd = mshape/centsize(mshape)
+  mshMel = pd.melt(mshStd).drop(&lsquo;variable&rsquo;,1).T
+  #mshRep = pd.concat([mshMel]<em>numind, ignore_index = True) #calculate repeating size standardized meanShape
+  mshRep = np.dot(np.ones([numind,1]), mshMel)
+  simDia = np.identity(numland * dim) #identity matrix
+  #lonWid = A[[&ldquo;x&rdquo;,&ldquo;y&rdquo;]].values.reshape(numind,numland</em>dim) #must have column names &ldquo;x&rdquo; and &ldquo;y&rdquo; for coordinates
+  lonWidX = A[&ldquo;x&rdquo;].values.reshape(numind,numland)
+  lonWidY = A[&ldquo;y&rdquo;].values.reshape(numind,numland)
+  lonWid = np.concatenate((lonWidX, lonWidY), axis = 1)
+  temp1 = simDia &ndash; np.dot(mshMel.T, mshMel)
+  Xi = np.dot(lonWid, temp1) #orthogonal according to Rholf
+  Xproj = Xi + mshRep
+  return Xproj</p>
+
+<p>procCoords = pGP(allCoords, 200,2,10) #perform Procrustes superimposition
+procoordinates = np.tile(np.arange(0,10),200)
+procindividuals = allCoords[&lsquo;individuals&rsquo;]
+procCoords[&lsquo;coordinates&rsquo;] = procoordinates
+procCoords[&lsquo;individuals&rsquo;] = sort(procindividuals)
+projCoords = ortproj(procCoords, 10, 2, 200) #perform orthogonal projection
+```
+Numpy array projCoords holds wide representation of projected data (rows are individuals, while columns are all landmarks, first all x and then y coordinates), ready to be used in PCA or any other multivariate method. In order to illustrate potential grouping in PCA morphospace, since the data is randomly generated, a kmeans clustering will be performed with 3 groups, just to effectively split the data. PCA can be done in python in numerous ways, but in this post a PCA decomposition from <em>scikit-learn</em> package is used.</p>
+
+<p>```python PCA, cluster analysis and plots
+pca = PCA(n_components = 3)
+pca.fit(projCoords)
+print(pca.explained_variance_ratio_)</p>
+
+<p>projCoordsP = pca.transform(projCoords) #get the individual scores on PC axes</p>
+
+<p>clusters = pd.Series(pyc.kcluster(projCoordsP, nclusters = 3, method = &lsquo;a&rsquo;, dist = &lsquo;e&rsquo;)[0])
+set2 = brewer2mpl.get_map(&lsquo;RdYlBu&rsquo;, &lsquo;diverging&rsquo;, 3).mpl_colors #generate nice colors
+projCoordsPa = np.column_stack((projCoordsP, clusters)) #concatenate all for sequential plot-building</p>
+
+<p>group1PCA = projCoordsPa[projCoordsPa[:,3] == 0] #split by group for sequential plot-building
+group2PCA = projCoordsPa[projCoordsPa[:,3] == 1]
+group3PCA = projCoordsPa[projCoordsPa[:,3] == 2]
+fig = plt.figure()
+ax = fig.add_subplot(111, projection=&lsquo;3d&rsquo;)
+ax.plot(group1PCA[:,0], group1PCA[:,1], group1PCA[:,2], &lsquo;o&rsquo;, c = set2[0], alpha = 1, label = &lsquo;Group1&rsquo;)
+ax.plot(group2PCA[:,0], group2PCA[:,1], group2PCA[:,2], &lsquo;o&rsquo;, c = set2[1], alpha = 1, label = &lsquo;Group2&rsquo;)
+ax.plot(group3PCA[:,0], group3PCA[:,1], group3PCA[:,2], &lsquo;o&rsquo;, c = set2[2], alpha = 1, label = &lsquo;Group3&rsquo;)
+ax.set_title(&ldquo;PCA with grouping according to kmeans 3 group solution&rdquo;)
+plt.legend(loc=&lsquo;upper left&rsquo;)
+ax.set_xlabel(&lsquo;PC1 (14.45%)&rsquo;)
+ax.set_ylabel(&lsquo;PC2 (13.29%)&rsquo;)
+ax.set_zlabel(&lsquo;PC3 (12.46%)&rsquo;)
+plt.show()
+```
+Since the data is randomly generated, there is not much structured variation in it, as three of the first PC axes describe 14.45%, 13.29% and 12.46% of total sample variability, respectively. On the other hand, kmeans forces the data into three groups, which is useful for demonstration of plotting in matplotlib with 3D axes, and a groupping structure in PCA scatterplots (Figure 1), similar to real-world data.</p>
+
+<p><img class="center" src="/images/TDPCAscatter.png" width="650" height="484" title="&lsquo;PCA of projected and superimposed data&rsquo;" ></p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Rohlf, J.F. 1999. Shape statistics: Procrustes superimpositions and tangent spaces. <em>Journal of Classification</em> <strong>16</strong>: 197-223.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Simple Angles and Nice Plots]]></title>
     <link href="http://paulidealiste.github.io/blog/2014/06/09/simple-angles-and-nice-plots/"/>
     <updated>2014-06-09T17:28:06+02:00</updated>
     <id>http://paulidealiste.github.io/blog/2014/06/09/simple-angles-and-nice-plots</id>
-    <content type="html"><![CDATA[<p>Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in &ldquo;Geometric morphometrics in R&rdquo; by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the <em>polarRotator</em> function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.</p>
+    <content type="html"><![CDATA[<p>Angles were important for some of the most interesting research in morphometrics. The approach of Rao and Suryawanshi, 1998<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>. introduced the angles within the landmark triangulation grids as an alternative to Procrustes superimposition for extracting shape data. This post does not perform the procedures described by Rao (which are ported to R in &ldquo;Geometric morphometrics in R&rdquo; by J.Claude, 2008), but instead aims at extracting angle data, from configurations of landmarks, after Procrustes superimposition. The code presented here is motivated by the <em>polarRotator</em> function from some of the previous pyhton-related posts, and it presents landmark data as polar angles. These angles represent the angular deviation of each landmark from the centroid of the respective configuration (Figure 1), so that the variability in their position with respect to xy centroid coordinates, may represent their shape differences. Since superimposition procedure sets all configurations centroids to the origin, they are all 0,0. Dataset used is the same as for the triangulation post.</p>
 
 <p>```r Plotting the circle, centroid axes and mean configuration
 library(geomorph)
@@ -115,6 +212,14 @@ legend(0.3,0.6, legend = 1:16, fill = colorPoint, cex = 0.7)
 <p><img class="center" src="/images/AnglesMean2.png" width="500" height="436" title="&lsquo;Landmarks ordered by angles + 10&rsquo;" ></p>
 
 <p> Some variablity is present around landmarks 10, 6 and 5, while others are nearly or completely overlapping. The variability may not be large, but it will be checked in future posts, as well as possible PCA with the angular data.</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Rao C.R. and S. Suryawanshi. 1998. Statistical analysis of shape of objects based on landmark data. <em>PNAS</em> <strong>93</strong>: 12132-12136.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
 ]]></content>
   </entry>
   
@@ -389,11 +494,19 @@ V(graph)$color &lt;&ndash; colormap[gsc$membership] #color graph vertices accord
 legend(0.8,1.4, legend = c(&ldquo;neural crest&rdquo;, &ldquo;somitomere&rdquo;), fill = colormap)
 ```</p>
 
-<p>Leading eigenvector community algorithm tries to find community structure in the graph by calculating the eigenvector of the modularity matrix for the largest positive eigenvalue and then separating vertices into two communities based on the sign of the corresponding element in the eigenvector (Newman, 2006). This method was preffered over many others because it is closer to usual multivariate methods, such as PCA, that are commonly used to depict variability patterns.</p>
+<p>Leading eigenvector community algorithm tries to find community structure in the graph by calculating the eigenvector of the modularity matrix for the largest positive eigenvalue and then separating vertices into two communities based on the sign of the corresponding element in the eigenvector (Newman, 2006<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>). This method was preffered over many others because it is closer to usual multivariate methods, such as PCA, that are commonly used to depict variability patterns.</p>
 
 <p><img class="center" src="/images/modularityGraph.png" width="541" height="467" title="&lsquo;Modularity graph&rsquo;" ></p>
 
 <p>Graph community strucure depicts modularity in the landmark configurations accurately, with the exception of lm16, that is positioned on the posterior basicranium. Higher correlations are, on average, present within modules while between modules, only one connection is higher than 0.5, that between lm2 and lm14. Since these landmarks lay on the opposite sides of the cranium, they may encompass the variability in total anterior-posterior length. i.e. cranial size.</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Newman, M.E.J. 2006. Modularity and community structure in networks. <em>PNAS</em> <strong>103</strong>: 8577-8582.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
 ]]></content>
   </entry>
   
@@ -435,128 +548,6 @@ corrplot(capCor, method = "circle", tl.cex = 0.93, order = "hclust", addrect = 3
 <p><img class="center" src="/images/Corrplot.png" width="570" height="529" title="&lsquo;Delaunay&rsquo;" ></p>
 
 <p>Correlation plot with three proposed general landmark groups in the matrix reveals that the correlations are, on average, higher for locally grouped landmaks, especially the anterior ones, from 1 to 7. This can`t be used as a reliablie test for modularity hypothesis, but it can serve as a basis for further analyses based on construcing linked graphs or networks using correlation matrices from landmark data, where the xy coordinates are transformed to one number. Also this can be a useful way of representing modular structure visually, since both Delaunay and correlation plots are highly customizable, and can be colored according to real modularity hypotheses. Testing some of these will be the subject of future posts.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Python Forcing Monsters` Shape]]></title>
-    <link href="http://paulidealiste.github.io/blog/2014/03/08/python-forcing-monsters%60-shape/"/>
-    <updated>2014-03-08T11:49:21+01:00</updated>
-    <id>http://paulidealiste.github.io/blog/2014/03/08/python-forcing-monsters`-shape</id>
-    <content type="html"><![CDATA[<p>Continuing on one of the previous posts about data generation in python, next natural step in the analytic procedure is the Procrustes superimposition. Since this procedure enables direct analyses of configurations` shape, and all subsequent explorative visualizations, it must be employed first. This post concerns with the basic superimposition procedure, involving only two landmark configurations, i.e. two generated monsters. One monster will be used as a reference and one as a target, which should undergo superimposition. First steps in data genration are the same as before, with the exception of polarRotator function that can take any numpy array and reorder it according to polar rotation angle. This is very useful since generated landmarks are not ordered properly and do not &ldquo;feel natural&rdquo; in plots and analyses.</p>
-
-<p>```r Library import, data generation and some functions</p>
-
-<p>import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt</p>
-
-<p>def centsize(M):   #centroid size of any configuration matrix
-  p = M.shape[0]
-  csize = np.sqrt(np.sum(M.var(0))*(p-1))
-  return csize</p>
-
-<p>def polarRotator(M):   #polar rotation for natural ordering of landmarks
-  x = np.array(M[:,0])
-  y = np.array(M[:,1])
-  points = np.array((x,y)).T
-  cent = (np.sum(x)/len(M), np.sum(y)/len(M))
-  angle = np.arctan2(points[:,1]-cent[1],points[:,0]-cent[0])
-  points = pd.DataFrame(points, columns = [&lsquo;x&rsquo;,&lsquo;y&rsquo;])
-  angle = pd.Series(angle)
-  points[&lsquo;angle&rsquo;] = angle
-  points = points.sort(&lsquo;angle&rsquo;)
-  rotatedMat = np.array(points[[&lsquo;x&rsquo;,&lsquo;y&rsquo;]])
-  return rotatedMat</p>
-
-<p>coordstest = np.vstack([np.random.uniform(175, 220, 10), np.random.uniform(175, 220, 10)]).T
-monster1 = np.vstack([np.random.multivariate_normal(coordstest[i,:], [[3,0],[0,3]], 1) for i in range(10)])
-monster2 = np.vstack([np.random.multivariate_normal(coordstest[i,:], [[3,0],[0,3]], 1) for i in range(10)])</p>
-
-<p>monster1 = polarRotator(monster1)
-monster2 = polarRotator(monster2)
-```
-The plot of configurations reveals their spatial relationship, as well as the general mean shape. This time, since landmarks are ordered properly, one line would be enough for representing mean shapes, and shapes of respective configurations.</p>
-
-<p>```r Plotting the original monsters</p>
-
-<p>plt.scatter(monster1[:,0], monster1[:,1], s = 80, c = &ldquo;#FFD200&rdquo;, edgecolors = &lsquo;none&rsquo;, label = &ldquo;monster1&rdquo;)
-plt.plot(monster1[:,0], monster1[:,1], &lsquo;&mdash;&rsquo;, color = &ldquo;#FFD200&rdquo;)
-plt.scatter(monster2[:,0], monster2[:,1], s = 80, c = &ldquo;#47BFDD&rdquo;, edgecolors = &lsquo;none&rsquo;, label = &ldquo;monster2&rdquo;)
-plt.plot(monster2[:,0], monster2[:,1], &lsquo;&mdash;&rsquo;, color = &ldquo;#47BFDD&rdquo;)</p>
-
-<p>meanMon = (monster1 + monster2) / 2 #calculate mean shape
-plt.scatter(meanMon[:,0], meanMon[:,1], s = 90, c = &ldquo;#6a12c4&rdquo;, edgecolors = &lsquo;none&rsquo;, label = &ldquo;mean monster&rdquo;)
-plt.plot(meanMon[:,0], meanMon[:,1], &lsquo;&ndash;&rsquo;, color = &ldquo;#6a12c4&rdquo;)</p>
-
-<p>labels = [&lsquo;Landmark {0}&rsquo;.format(i) for i in range(10)]
-for label, x, y in zip(labels, meanMon[:,0], meanMon[:,1]): #annotate mean landmarks by numbers
-  plt.annotate(label, xy = (x, y+0.3), ha = &lsquo;right&rsquo;, va = &lsquo;bottom&rsquo;)</p>
-
-<p>plt.grid()
-plt.legend(loc = &ldquo;lower left&rdquo;)
-```</p>
-
-<p><img class="center" src="/images/example1preProc.png" width="616" height="462" title="&lsquo;pre Procrustes 1&rsquo;" >
-<img class="center" src="/images/example2preProc.png" width="616" height="457" title="&lsquo;pre Procrustes 2&rsquo;" ></p>
-
-<p>Procrustes superimposition revolves around three features of shape extraction, that is invariance of landmark configurations to position, scale and rotation. There are a number of excelent textbooks about the mathematics and logic, as well as procedures for Procrustes superimposition (Bookstein, 1991, Dryden and Mardia, 1998, Zelditch et al., 2012), but for this post direct inspiration was <em>Morphometrics in R</em> (Claude, 2008), especially with the basic procedure presented in the following function definition.</p>
-
-<p>```r Partial Procrustes superimposition of two configurations</p>
-
-<p>def pProc(mat1, mat2):
-  k = mat1.shape[1]-1
-  m = mat1.shape[0]
-  sscaledMat1 = mat1 / centsize(mat1) #scaling and centering
-  sscaledMat2 = mat2 / centsize(mat2)
-  z1 = sscaledMat1 &ndash; [sscaledMat1[:,0].mean(), sscaledMat1[:,1].mean()]
-  z2 = sscaledMat2 &ndash; [sscaledMat2[:,0].mean(), sscaledMat2[:,1].mean()]
-  tempSv = np.dot(np.transpose(z2), z1) #rotation
-  svdMat = np.linalg.svd(tempSv)
-  U = svdMat[0]
-  V = svdMat[2]
-  Ds = svdMat[1]
-  tempSig = np.linalg.det(np.dot(np.transpose(z1), z2))
-  sig = np.sign(tempSig)
-  Ds[k] = sig * np.absolute(Ds[k])
-  U[:,k] = sig * U[:,k]
-  Gam = np.dot(V, np.transpose(U))
-  beta = np.sum(Ds)
-  pmat1 = np.dot(z1, Gam)
-  pmat2 = z2
-  tempRot = vstack((pmat1, pmat2))
-  rotatedMat = pd.DataFrame(tempRot, columns = [&lsquo;x&rsquo;,&lsquo;y&rsquo;])
-  return rotatedMat
-<code>``
-Plot of the superimposed configurations reveals that the Procrustes python was really able to force monsters</code> shape be more similar, removing the effects of orientation, size and rotation.</p>
-
-<p>```r Plot of the superimposed configurations</p>
-
-<p>rotatedMon = pProc(monster1, monster2)
-rotatedMon1 = np.array(rotatedMon[:10])
-rotatedMon2 = np.array(rotatedMon[10:20])</p>
-
-<p>plt.scatter(rotatedMon1[:,0], rotatedMon1[:,1], s = 80, c = &ldquo;#FFD200&rdquo;, edgecolors = &lsquo;none&rsquo;, label = &ldquo;super monster1&rdquo;)
-plt.plot(rotatedMon1[:,0], rotatedMon1[:,1], &lsquo;&mdash;&rsquo;, color = &ldquo;#FFD200&rdquo;)
-plt.scatter(rotatedMon2[:,0], rotatedMon2[:,1], s = 80, c = &ldquo;#47BFDD&rdquo;, edgecolors = &lsquo;none&rsquo;, label = &ldquo;super monster2&rdquo;)
-plt.plot(rotatedMon2[:,0], rotatedMon2[:,1], &lsquo;&mdash;&rsquo;, color = &ldquo;#47BFDD&rdquo;)</p>
-
-<p>meanRotMon = (rotatedMon1 + rotatedMon2) / 2
-plt.scatter(meanRotMon[:,0], meanRotMon[:,1], s = 90, c = &ldquo;#6a12c4&rdquo;, edgecolors = &lsquo;none&rsquo;, label = &ldquo;super mean monster&rdquo;)
-plt.plot(meanRotMon[:,0], meanRotMon[:,1], &lsquo;&ndash;&rsquo;, color = &ldquo;#6a12c4&rdquo;)</p>
-
-<p>labelsRot = [&lsquo;Landmark {0}&rsquo;.format(i) for i in range(10)]
-for label, x, y in zip(labelsRot, meanRotMon[:,0], meanRotMon[:,1]): #annotate mean landmarks by numbers
-  plt.annotate(label, xy = (x, y+0.01), ha = &lsquo;right&rsquo;, va = &lsquo;bottom&rsquo;)</p>
-
-<p>plt.grid()
-plt.legend(loc = &ldquo;lower left&rdquo;)
-```</p>
-
-<p><img class="center" src="/images/example1Proc.png" width="616" height="454" title="&lsquo;Procrustes monster&rsquo;" >
-<img class="center" src="/images/example2Proc.png" width="616" height="452" title="&lsquo;Procrustes monster 2&rsquo;" ></p>
-
-<p>Following posts should continue on this one and describe how the partial Procrustes superimposition for multilple configurations can be performed with fabulous sientific python.</p>
 ]]></content>
   </entry>
   
