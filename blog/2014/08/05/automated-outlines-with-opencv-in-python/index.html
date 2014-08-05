@@ -1,0 +1,341 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Automated Outlines With openCV in Python - Creative morphometrics</title>
+  <meta name="author" content="Miloš Blagojević">
+
+  
+  <meta name="description" content="This post shows one possible sequence of analytic steps needed to extract continuous outline from any object">
+
+  <meta name="keywords" content="morphometrics, numpy, openCV">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://paulidealiste.github.io/blog/2014/08/05/automated-outlines-with-opencv-in-python">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Creative morphometrics" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Creative morphometrics</a></h1>
+  
+    <h2>Using R and python for colorful research of biological shape</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:paulidealiste.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/software">Software</a></li>
+  <li><a href="/about">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Automated Outlines With openCV in Python</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-05T20:06:18+02:00" pubdate data-updated="true">Aug 5<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Quantification of biological shape often relies on manual extraction of information from a set of digital images or 3D models, like manual landmark placement or outlining the object of interest by hand. With computer vision approach and, especially, with the help of the <a href = "http://opencv.org">openCV</a> library, a set of image manipulation tecniques as well as automated feature extractions are facilitated to a large extent. Since there are excellent python bindings for this library it is easy to test ideas for image analysis and object extraction in the context of geometric morphometrics.</p>
+
+<p>This post will serve as a general introduction to openCV in python, and will continue on the earlier posts about the outline extraction from digital photos usual in GM research. The sample image can be obtained <a href = "http://goo.gl/eDtqdn"> here</a>.</p>
+
+<figure class='code'><figcaption><span>Library import, reading and displaying the image</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">cv2</span> <span class="c">#this is the main openCV class, the python binding file should be in /pythonXX/Lib/site-packages</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">gwash</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s">&quot;~/taster1.JPG&quot;</span><span class="p">)</span> <span class="c">#import image</span>
+</span><span class='line'><span class="n">gwashBW</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">gwash</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2GRAY</span><span class="p">)</span> <span class="c">#change to grayscale</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">gwashBW</span><span class="p">,</span> <span class="s">&#39;gray&#39;</span><span class="p">)</span> <span class="c">#this is matplotlib solution (Figure 1)</span>
+</span><span class='line'><span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">([]),</span> <span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">([])</span>
+</span><span class='line'><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cv2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="s">&#39;gwash&#39;</span><span class="p">,</span> <span class="n">gwashBW</span><span class="p">)</span> <span class="c">#this is for native openCV display</span>
+</span><span class='line'><span class="n">cv2</span><span class="o">.</span><span class="n">waitKey</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="/images/figure_1gbw.png" width="600" height="468" title="'Original image'" ></p>
+
+<p>This image is suitable for automated online extraction of the skull, since there is a significant ammount of contrast of the object and the background. The idea is to use thresholding and a bit of erosion around the edges to delimit the skull from the rest of the picture and then apply automated contour extractions.</p>
+
+<figure class='code'><figcaption><span>Image threshold, erosion and contour extraction</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">ret</span><span class="p">,</span><span class="n">thresh1</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span><span class="n">gwashBW</span><span class="p">,</span><span class="mi">15</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="n">cv2</span><span class="o">.</span><span class="n">THRESH_BINARY</span><span class="p">)</span> <span class="c">#the value of 15 is chosen by trial-and-error to produce the best outline of the skull</span>
+</span><span class='line'><span class="n">kernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span> <span class="c">#square image kernel used for erosion</span>
+</span><span class='line'><span class="n">erosion</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">erode</span><span class="p">(</span><span class="n">thresh1</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span><span class="n">iterations</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="c">#refines all edges in the binary image</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">opening</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">morphologyEx</span><span class="p">(</span><span class="n">erosion</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">MORPH_OPEN</span><span class="p">,</span> <span class="n">kernel</span><span class="p">)</span>
+</span><span class='line'><span class="n">closing</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">morphologyEx</span><span class="p">(</span><span class="n">opening</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">MORPH_CLOSE</span><span class="p">,</span> <span class="n">kernel</span><span class="p">)</span> <span class="c">#this is for further removing small noises and holes in the image</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">closing</span><span class="p">,</span> <span class="s">&#39;gray&#39;</span><span class="p">)</span> <span class="c">#Figure 2</span>
+</span><span class='line'><span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">([]),</span> <span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">([])</span>
+</span><span class='line'><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">contours</span><span class="p">,</span> <span class="n">hierarchy</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">findContours</span><span class="p">(</span><span class="n">closing</span><span class="p">,</span><span class="n">cv2</span><span class="o">.</span><span class="n">RETR_TREE</span><span class="p">,</span><span class="n">cv2</span><span class="o">.</span><span class="n">CHAIN_APPROX_SIMPLE</span><span class="p">)</span> <span class="c">#find contours with simple approximation</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cv2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="s">&#39;cleaner&#39;</span><span class="p">,</span> <span class="n">closing</span><span class="p">)</span> <span class="c">#Figure 3</span>
+</span><span class='line'><span class="n">cv2</span><span class="o">.</span><span class="n">drawContours</span><span class="p">(</span><span class="n">closing</span><span class="p">,</span> <span class="n">contours</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="mi">4</span><span class="p">)</span>
+</span><span class='line'><span class="n">cv2</span><span class="o">.</span><span class="n">waitKey</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="/images/figure_2teoc.png" width="600" height="470" title="'Binary image'" >
+<img class="center" src="/images/figure_3econ.png" width="600" height="468" title="'Extracted contours'" ></p>
+
+<p>Finally, since other objects of no interest are also outlined in Figure 3, the skull outline must be identified in the array list contours. This can be done by a for loop, and the openCV method for calculating outline areas, as the skull outline is the longest continual outline in the image.</p>
+
+<figure class='code'><figcaption><span>Calculating outline areas and extracting the skull outline</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">areas</span> <span class="o">=</span> <span class="p">[]</span> <span class="c">#list to hold all areas</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">for</span> <span class="n">contour</span> <span class="ow">in</span> <span class="n">contours</span><span class="p">:</span>
+</span><span class='line'>  <span class="n">ar</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">contourArea</span><span class="p">(</span><span class="n">contour</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">areas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ar</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">max_area</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">areas</span><span class="p">)</span>
+</span><span class='line'><span class="n">max_area_index</span> <span class="o">=</span> <span class="n">areas</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">max_area</span><span class="p">)</span> <span class="c">#index of the list element with largest area</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cnt</span> <span class="o">=</span> <span class="n">contours</span><span class="p">[</span><span class="n">max_area_index</span><span class="p">]</span> <span class="c">#largest area contour</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cv2</span><span class="o">.</span><span class="n">drawContours</span><span class="p">(</span><span class="n">closing</span><span class="p">,</span> <span class="p">[</span><span class="n">cnt</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="mi">3</span><span class="p">,</span> <span class="n">maxLevel</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'><span class="n">cv2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="s">&#39;cleaner&#39;</span><span class="p">,</span> <span class="n">closing</span><span class="p">)</span>
+</span><span class='line'><span class="n">cv2</span><span class="o">.</span><span class="n">waitKey</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'><span class="n">cv2</span><span class="o">.</span><span class="n">destroyAllWindows</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="/images/figure_4fec.png" width="600" height="469" title="'One contour'" ></p>
+
+<p>The extracted contour is a numpy array with xy coordinates of contour points in rows, so it can be directly used for sampling landmarks along the outline for fitting the normalized Fourier transform and doing shape analysis further. Of course, the procedure can be easily generalized to work over all images in a dataset, extract the contours with largest areas from each image, and generate a dataset for shape analysis.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Miloš Blagojević</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-05T20:06:18+02:00" pubdate data-updated="true">Aug 5<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/morphometrics/'>morphometrics</a>, <a class='category' href='/blog/categories/python/'>python</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://paulidealiste.github.io/blog/2014/08/05/automated-outlines-with-opencv-in-python/" data-via="" data-counturl="http://paulidealiste.github.io/blog/2014/08/05/automated-outlines-with-opencv-in-python/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/07/07/python-project-and-explore/" title="Previous Post: Python project and explore">&laquo; Python project and explore</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <img class="center none" src="/images/roehead.png" width="207" height="347" title="'Roe deer'" >
+<center>I am an adventurer in the <font color = "#0099FF">wonderful world</font> of biological shape analysis. Mostly this blog includes posts about R and python routines for doing shape analyses and displaying beautiful results.</center>  
+<center>E-mail me at <a href="mailto:paulidealiste@gmail.com"><font color = "orange">paulidealiste@gmail.com</font></a></center>
+<p></p>
+<center><script src="//platform.linkedin.com/in.js" type="text/javascript">
+  lang: en_US
+</script>
+<script type="IN/Share" data-url="http://creativemorphometrics.co.vu/"></script></center><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/08/05/automated-outlines-with-opencv-in-python/">Automated Outlines With openCV in Python</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/07/python-project-and-explore/">Python Project and Explore</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/09/simple-angles-and-nice-plots/">Simple Angles and Nice Plots</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/17/complete-procrustes-in-python/">Complete Procrustes in Python</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/03/modularity-graphs-and-triangulations/">Modularity, Graphs and Triangulations</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Miloš Blagojević -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

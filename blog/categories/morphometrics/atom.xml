@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Morphometrics | Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/blog/categories/morphometrics/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-07-07T18:28:01+02:00</updated>
+  <updated>2014-08-05T20:13:26+02:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -12,6 +12,85 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Automated Outlines With openCV in Python]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/08/05/automated-outlines-with-opencv-in-python/"/>
+    <updated>2014-08-05T20:06:18+02:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/08/05/automated-outlines-with-opencv-in-python</id>
+    <content type="html"><![CDATA[<p>Quantification of biological shape often relies on manual extraction of information from a set of digital images or 3D models, like manual landmark placement or outlining the object of interest by hand. With computer vision approach and, especially, with the help of the <a href = "http://opencv.org">openCV</a> library, a set of image manipulation tecniques as well as automated feature extractions are facilitated to a large extent. Since there are excellent python bindings for this library it is easy to test ideas for image analysis and object extraction in the context of geometric morphometrics.</p>
+
+<p>This post will serve as a general introduction to openCV in python, and will continue on the earlier posts about the outline extraction from digital photos usual in GM research. The sample image can be obtained <a href = "http://goo.gl/eDtqdn"> here</a>.</p>
+
+<p>```python Library import, reading and displaying the image</p>
+
+<p>import numpy as np
+import cv2 #this is the main openCV class, the python binding file should be in /pythonXX/Lib/site-packages
+from matplotlib import pyplot as plt</p>
+
+<p>gwash = cv2.imread(&ldquo;~/taster1.JPG&rdquo;) #import image
+gwashBW = cv2.cvtColor(gwash, cv2.COLOR_BGR2GRAY) #change to grayscale</p>
+
+<p>plt.imshow(gwashBW, &lsquo;gray&rsquo;) #this is matplotlib solution (Figure 1)
+plt.xticks([]), plt.yticks([])
+plt.show()</p>
+
+<p>cv2.imshow(&lsquo;gwash&rsquo;, gwashBW) #this is for native openCV display
+cv2.waitKey(0)
+```
+<img class="center" src="/images/figure_1gbw.png" width="600" height="468" title="&lsquo;Original image&rsquo;" ></p>
+
+<p>This image is suitable for automated online extraction of the skull, since there is a significant ammount of contrast of the object and the background. The idea is to use thresholding and a bit of erosion around the edges to delimit the skull from the rest of the picture and then apply automated contour extractions.</p>
+
+<p>```python Image threshold, erosion and contour extraction</p>
+
+<p>ret,thresh1 = cv2.threshold(gwashBW,15,255,cv2.THRESH_BINARY) #the value of 15 is chosen by trial-and-error to produce the best outline of the skull
+kernel = np.ones((5,5),np.uint8) #square image kernel used for erosion
+erosion = cv2.erode(thresh1, kernel,iterations = 1) #refines all edges in the binary image</p>
+
+<p>opening = cv2.morphologyEx(erosion, cv2.MORPH_OPEN, kernel)
+closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel) #this is for further removing small noises and holes in the image</p>
+
+<p>plt.imshow(closing, &lsquo;gray&rsquo;) #Figure 2
+plt.xticks([]), plt.yticks([])
+plt.show()</p>
+
+<p>contours, hierarchy = cv2.findContours(closing,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) #find contours with simple approximation</p>
+
+<p>cv2.imshow(&lsquo;cleaner&rsquo;, closing) #Figure 3
+cv2.drawContours(closing, contours, -1, (255, 255, 255), 4)
+cv2.waitKey(0)
+```
+<img class="center" src="/images/figure_2teoc.png" width="600" height="470" title="&lsquo;Binary image&rsquo;" >
+<img class="center" src="/images/figure_3econ.png" width="600" height="468" title="&lsquo;Extracted contours&rsquo;" ></p>
+
+<p>Finally, since other objects of no interest are also outlined in Figure 3, the skull outline must be identified in the array list contours. This can be done by a for loop, and the openCV method for calculating outline areas, as the skull outline is the longest continual outline in the image.</p>
+
+<p>```python Calculating outline areas and extracting the skull outline</p>
+
+<p>areas = [] #list to hold all areas</p>
+
+<p>for contour in contours:</p>
+
+<pre><code>ar = cv2.contourArea(contour)
+areas.append(ar)
+</code></pre>
+
+<p>max_area = max(areas)
+max_area_index = areas.index(max_area) #index of the list element with largest area</p>
+
+<p>cnt = contours[max_area_index] #largest area contour</p>
+
+<p>cv2.drawContours(closing, [cnt], 0, (255, 255, 255), 3, maxLevel = 0)
+cv2.imshow(&lsquo;cleaner&rsquo;, closing)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+<img class="center" src="/images/figure_4fec.png" width="600" height="469" title="&lsquo;One contour&rsquo;" ></p>
+
+<p>The extracted contour is a numpy array with xy coordinates of contour points in rows, so it can be directly used for sampling landmarks along the outline for fitting the normalized Fourier transform and doing shape analysis further. Of course, the procedure can be easily generalized to work over all images in a dataset, extract the contours with largest areas from each image, and generate a dataset for shape analysis.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Python Project and Explore]]></title>
@@ -507,47 +586,6 @@ legend(0.8,1.4, legend = c(&ldquo;neural crest&rdquo;, &ldquo;somitomere&rdquo;)
 </ol>
 </div>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Delaunay Triangulation Experiment]]></title>
-    <link href="http://paulidealiste.github.io/blog/2014/04/04/delaunay-triangulation-for-modularity-pt-1/"/>
-    <updated>2014-04-04T18:09:37+02:00</updated>
-    <id>http://paulidealiste.github.io/blog/2014/04/04/delaunay-triangulation-for-modularity-pt-1</id>
-    <content type="html"><![CDATA[<p>Since landmark data consists of x and y Cartesian coordinates, it would be useful if they could be represented by one summary number, that would preserve the spatial information. This is just a proposal of one possiblity using Delaunay triangulation between landmark configurations, and the average area of all triangles emanating from individual landmarks. Since landmark position within the triangulation grid would influence the shape and size as well as number of triangles around it, the area should preserve enoguh information about the spatial relationships of landmarks. Dataset for this post consists of ventral aspect half configurations from <a href="http://goo.gl/LP3xsd" target="_blank">here</a>. Delaunay triangulation will be performed using <em>deldir</em> R package, since it reports the mentioned triangle areas as a part of object summary.</p>
-
-<p>```r Importing data, basic GM, calculating the triangulation, extracting areas and plotting
-library(deldir)
-library(geomorph)
-load(&ldquo;capSample.RData&rdquo;)</p>
-
-<p>capreolusGPA &lt;&ndash; gpagen(capSample)
-capGPAcoords &lt;&ndash; capreolusGPA$coords</p>
-
-<p>delCap &lt;&ndash; deldir(capSample[,,10][,1], capSample[,,10][,2]) #extract any individual from an array for visualization
-plot(delCap, col=c(&ldquo;lightblue&rdquo;,&ldquo;lightgrey&rdquo;,1,1,1), lwd = c(2,2), xlim = c(150, 400), cex = 0.1, ann = FALSE)
-points(capSample[,,10], col = &ldquo;orange&rdquo;, pch = 16, cex = 1.4)
-text(capSample[,,10], label = c(1:16), pos = 3, ceo = 0.5)</p>
-
-<p>areaCap &lt;&ndash; t(apply(capGPAcoords, 3, function(A) deldir(A[,1],A[,2])$summary[,4])) #calcuate areas per landmark
-areaCap &lt;&ndash; data.frame(areaCap)
-names(areaCap) &lt;&ndash; paste(&ldquo;lm&rdquo;, c(1:16), sep = &ldquo;&rdquo;)
-```</p>
-
-<p><img class="center" src="/images/Delaunay.png" width="401" height="473" title="&lsquo;Delaunay&rsquo;" ></p>
-
-<p>Values in the areaCap matrix represent average areas of all triangles emanating from the landmark in question, so its dimensions are 60x16. Correlation matrix (16x16) can be calculated from the areaCap matrix, and it should reflect relative positioning of landmarks through spatial grouping pattern. This can be checked visually using <em>corrplot</em> package visualization of the correlation matrix, which allows direct assesment of emerging patterns in the matrix. Additionally, this package allows reordering of rows and columns according to hierarchical clustering algorhithms and representing the desired number of clusters with rectangles in the correlation plot. This can only be considered as an idea of general modularity, since landmarks from the same cranial region should be correlated more than distant landmarks. But the transformation of xy coordinates to average triangle areas may have introduced non-biological variation or obscured some of the natural variation and these procedures as well as subsequent analyses may be treated only as a fun experiment and visualization tool for now.</p>
-
-<p><code>r Drawing correlation plot
-library(corrplot)
-capCor &lt;- cor(areaCap)
-corrplot(capCor, method = "circle", tl.cex = 0.93, order = "hclust", addrect = 3)
-</code></p>
-
-<p><img class="center" src="/images/Corrplot.png" width="570" height="529" title="&lsquo;Delaunay&rsquo;" ></p>
-
-<p>Correlation plot with three proposed general landmark groups in the matrix reveals that the correlations are, on average, higher for locally grouped landmaks, especially the anterior ones, from 1 to 7. This can`t be used as a reliablie test for modularity hypothesis, but it can serve as a basis for further analyses based on construcing linked graphs or networks using correlation matrices from landmark data, where the xy coordinates are transformed to one number. Also this can be a useful way of representing modular structure visually, since both Delaunay and correlation plots are highly customizable, and can be colored according to real modularity hypotheses. Testing some of these will be the subject of future posts.</p>
 ]]></content>
   </entry>
   
