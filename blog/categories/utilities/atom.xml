@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Utilities | Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/blog/categories/utilities/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-08-05T20:13:26+02:00</updated>
+  <updated>2014-09-02T14:35:02+02:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -12,6 +12,41 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[PLS Model for Temperature in R]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/09/02/pls-model-for-temperature-in-r/"/>
+    <updated>2014-09-02T13:01:59+02:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/09/02/pls-model-for-temperature-in-r</id>
+    <content type="html"><![CDATA[<p>Continuing on the post about the climate data extraction in R, this post demonstrates a simple approach to using PLS (partial least squares) for determining the common covariance patterns between morphology and mean monthly temperature (although the model is likely to be bad). Morphology data can be found  <a href = "http://goo.gl/7BQ4tT"> here</a>. This dataset only contains PCA scores of individuals for the first two PC axes (Figure 1), extracted from the Fourier descriptors of horn shape. PC1 axis (92%) clearly separates males and females on the basis of respective horn shape.</p>
+
+<p><img class="center" src="/images/pca1plot.png" width="450" height="393" title="&lsquo;ordinary PCA&rsquo;" ></p>
+
+<p>Temperature data are extracted using geoTiffs from  <a href="http://www.worldclim.org/" target="_blank">WorldClim</a> database, as in the mentioned post about climate data extraction. The ready-made dataset of mean monthly temperatures for the above study locality can be found <a href = "http://goo.gl/2fAlAF"> here</a>.</p>
+
+<p>```r Importing data and plotting the Figure 1 PCA
+fourierPC &lt;&ndash; read.table(&ldquo;~/fourierPC.txt&rdquo;, header = TRUE, sep = &ldquo;,&rdquo;) #by default they are in the home directory
+matTaraMean &lt;&ndash; read.table(&ldquo;~/matTaraMean.txt&rdquo;, header = TRUE, sep = &ldquo;,&rdquo;)</p>
+
+<p>library(ggplot2)
+theme_set(theme_bw())
+sex &lt;&ndash; c(&ldquo;f&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;, &ldquo;m&rdquo;,&ldquo;m&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;,&ldquo;f&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;) #individual sex is known in advance
+ggplot(fourierPC, aes(PC1, PC2)) + geom_point(size = 5, shape = 19, aes(color = sex))
+```
+PLS analysis is a useful multivariate technique used for determining the common variation patterns in two blocks of data and is sometimes reffered to as PLS regression. In this post, of all PLS implementations in R, the choice is on the fabulous <em>plsdepot</em> library, developed and maintained by Gaston Sanchez, whose <a href="http://gastonsanchez.com" target="_blank"> blog/personal page</a> and work in general was a great insipiration for Creative Morphometrics. His approach is very well explained and documented over at his page, so only direct implementation on the data above will be provided here.</p>
+
+<p><code>r PLS plsdepot library
+library(plsdepot)
+taraMat &lt;- matTaraMean[sample(221, 26),] #extract 26 samples from 221 raster grid values
+climatePLS &lt;- plsreg1(taraMat, fourierPC$PC1, comps = 3)
+plot(climatePLS)#plot circle of correlations in order to determine the influence of predictor variables
+</code></p>
+
+<p><img class="center" src="/images/RplotCircles.png" width="450" height="393" title="&lsquo;PLS correlation circle&rsquo;" ></p>
+
+<p>It is obvious from Figure 2. that the variables in question share no common variation pattern and are totally unrelated. If the chosen data was better, some of the blue lines (predictors) would run parallel with the orange one (response). If the R<sup>2</sup> value for this model is examined (it is a part of climatePLS object &ndash; climatePLS$R2) the unrelatedness of predictors and response in this model gets even more obvious (R<sup>2</sup> = 0.035). Predictors in this model are also highly correlated within themselves, which renders them rather useles in prediction, as was stated at the onset.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Extracting Climate Data in R]]></title>

@@ -4,7 +4,7 @@
   <title><![CDATA[Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-08-05T20:13:26+02:00</updated>
+  <updated>2014-09-02T14:35:02+02:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[PLS Model for Temperature in R]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/09/02/pls-model-for-temperature-in-r/"/>
+    <updated>2014-09-02T13:01:59+02:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/09/02/pls-model-for-temperature-in-r</id>
+    <content type="html"><![CDATA[<p>Continuing on the post about the climate data extraction in R, this post demonstrates a simple approach to using PLS (partial least squares) for determining the common covariance patterns between morphology and mean monthly temperature (although the model is likely to be bad). Morphology data can be found  <a href = "http://goo.gl/7BQ4tT"> here</a>. This dataset only contains PCA scores of individuals for the first two PC axes (Figure 1), extracted from the Fourier descriptors of horn shape. PC1 axis (92%) clearly separates males and females on the basis of respective horn shape.</p>
+
+<p><img class="center" src="http://paulidealiste.github.io/images/pca1plot.png" width="450" height="393" title="'ordinary PCA'" ></p>
+
+<p>Temperature data are extracted using geoTiffs from  <a href="http://www.worldclim.org/" target="_blank">WorldClim</a> database, as in the mentioned post about climate data extraction. The ready-made dataset of mean monthly temperatures for the above study locality can be found <a href = "http://goo.gl/2fAlAF"> here</a>.</p>
+
+<figure class='code'><figcaption><span>Importing data and plotting the Figure 1 PCA</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>fourierPC <span class="o">&lt;-</span> read.table<span class="p">(</span><span class="s">&quot;~/fourierPC.txt&quot;</span><span class="p">,</span> header <span class="o">=</span> <span class="kc">TRUE</span><span class="p">,</span> sep <span class="o">=</span> <span class="s">&quot;,&quot;</span><span class="p">)</span> <span class="c1">#by default they are in the home directory</span>
+</span><span class='line'>matTaraMean <span class="o">&lt;-</span> read.table<span class="p">(</span><span class="s">&quot;~/matTaraMean.txt&quot;</span><span class="p">,</span> header <span class="o">=</span> <span class="kc">TRUE</span><span class="p">,</span> sep <span class="o">=</span> <span class="s">&quot;,&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>library<span class="p">(</span>ggplot2<span class="p">)</span>
+</span><span class='line'>theme_set<span class="p">(</span>theme_bw<span class="p">())</span>
+</span><span class='line'>sex <span class="o">&lt;-</span> c<span class="p">(</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span> <span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">)</span> <span class="c1">#individual sex is known in advance</span>
+</span><span class='line'>ggplot<span class="p">(</span>fourierPC<span class="p">,</span> aes<span class="p">(</span>PC1<span class="p">,</span> PC2<span class="p">))</span> <span class="o">+</span> geom_point<span class="p">(</span>size <span class="o">=</span> <span class="m">5</span><span class="p">,</span> shape <span class="o">=</span> <span class="m">19</span><span class="p">,</span> aes<span class="p">(</span>color <span class="o">=</span> sex<span class="p">))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>PLS analysis is a useful multivariate technique used for determining the common variation patterns in two blocks of data and is sometimes reffered to as PLS regression. In this post, of all PLS implementations in R, the choice is on the fabulous <em>plsdepot</em> library, developed and maintained by Gaston Sanchez, whose <a href="http://gastonsanchez.com" target="_blank"> blog/personal page</a> and work in general was a great insipiration for Creative Morphometrics. His approach is very well explained and documented over at his page, so only direct implementation on the data above will be provided here.</p>
+
+<figure class='code'><figcaption><span>PLS plsdepot library</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>library<span class="p">(</span>plsdepot<span class="p">)</span>
+</span><span class='line'>taraMat <span class="o">&lt;-</span> matTaraMean<span class="p">[</span>sample<span class="p">(</span><span class="m">221</span><span class="p">,</span> <span class="m">26</span><span class="p">),]</span> <span class="c1">#extract 26 samples from 221 raster grid values</span>
+</span><span class='line'>climatePLS <span class="o">&lt;-</span> plsreg1<span class="p">(</span>taraMat<span class="p">,</span> fourierPC<span class="o">$</span>PC1<span class="p">,</span> comps <span class="o">=</span> <span class="m">3</span><span class="p">)</span>
+</span><span class='line'>plot<span class="p">(</span>climatePLS<span class="p">)</span><span class="c1">#plot circle of correlations in order to determine the influence of predictor variables</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="http://paulidealiste.github.io/images/RplotCircles.png" width="450" height="393" title="'PLS correlation circle'" ></p>
+
+<p>It is obvious from Figure 2. that the variables in question share no common variation pattern and are totally unrelated. If the chosen data was better, some of the blue lines (predictors) would run parallel with the orange one (response). If the R<sup>2</sup> value for this model is examined (it is a part of climatePLS object &ndash; climatePLS$R2) the unrelatedness of predictors and response in this model gets even more obvious (R<sup>2</sup> = 0.035). Predictors in this model are also highly correlated within themselves, which renders them rather useles in prediction, as was stated at the onset.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Automated Outlines With openCV in Python]]></title>

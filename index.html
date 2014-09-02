@@ -75,6 +75,80 @@
       
   <header>
     
+      <h1 class="entry-title"><a href="/blog/2014/09/02/pls-model-for-temperature-in-r/">PLS Model for Temperature in R</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-02T13:01:59+02:00" pubdate data-updated="true">Sep 2<span>nd</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Continuing on the post about the climate data extraction in R, this post demonstrates a simple approach to using PLS (partial least squares) for determining the common covariance patterns between morphology and mean monthly temperature (although the model is likely to be bad). Morphology data can be found  <a href = "http://goo.gl/7BQ4tT"> here</a>. This dataset only contains PCA scores of individuals for the first two PC axes (Figure 1), extracted from the Fourier descriptors of horn shape. PC1 axis (92%) clearly separates males and females on the basis of respective horn shape.</p>
+
+<p><img class="center" src="/images/pca1plot.png" width="450" height="393" title="'ordinary PCA'" ></p>
+
+<p>Temperature data are extracted using geoTiffs from  <a href="http://www.worldclim.org/" target="_blank">WorldClim</a> database, as in the mentioned post about climate data extraction. The ready-made dataset of mean monthly temperatures for the above study locality can be found <a href = "http://goo.gl/2fAlAF"> here</a>.</p>
+
+<figure class='code'><figcaption><span>Importing data and plotting the Figure 1 PCA</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>fourierPC <span class="o">&lt;-</span> read.table<span class="p">(</span><span class="s">&quot;~/fourierPC.txt&quot;</span><span class="p">,</span> header <span class="o">=</span> <span class="kc">TRUE</span><span class="p">,</span> sep <span class="o">=</span> <span class="s">&quot;,&quot;</span><span class="p">)</span> <span class="c1">#by default they are in the home directory</span>
+</span><span class='line'>matTaraMean <span class="o">&lt;-</span> read.table<span class="p">(</span><span class="s">&quot;~/matTaraMean.txt&quot;</span><span class="p">,</span> header <span class="o">=</span> <span class="kc">TRUE</span><span class="p">,</span> sep <span class="o">=</span> <span class="s">&quot;,&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>library<span class="p">(</span>ggplot2<span class="p">)</span>
+</span><span class='line'>theme_set<span class="p">(</span>theme_bw<span class="p">())</span>
+</span><span class='line'>sex <span class="o">&lt;-</span> c<span class="p">(</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span> <span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">,</span><span class="s">&quot;m&quot;</span><span class="p">,</span><span class="s">&quot;f&quot;</span><span class="p">)</span> <span class="c1">#individual sex is known in advance</span>
+</span><span class='line'>ggplot<span class="p">(</span>fourierPC<span class="p">,</span> aes<span class="p">(</span>PC1<span class="p">,</span> PC2<span class="p">))</span> <span class="o">+</span> geom_point<span class="p">(</span>size <span class="o">=</span> <span class="m">5</span><span class="p">,</span> shape <span class="o">=</span> <span class="m">19</span><span class="p">,</span> aes<span class="p">(</span>color <span class="o">=</span> sex<span class="p">))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>PLS analysis is a useful multivariate technique used for determining the common variation patterns in two blocks of data and is sometimes reffered to as PLS regression. In this post, of all PLS implementations in R, the choice is on the fabulous <em>plsdepot</em> library, developed and maintained by Gaston Sanchez, whose <a href="http://gastonsanchez.com" target="_blank"> blog/personal page</a> and work in general was a great insipiration for Creative Morphometrics. His approach is very well explained and documented over at his page, so only direct implementation on the data above will be provided here.</p>
+
+<figure class='code'><figcaption><span>PLS plsdepot library</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>library<span class="p">(</span>plsdepot<span class="p">)</span>
+</span><span class='line'>taraMat <span class="o">&lt;-</span> matTaraMean<span class="p">[</span>sample<span class="p">(</span><span class="m">221</span><span class="p">,</span> <span class="m">26</span><span class="p">),]</span> <span class="c1">#extract 26 samples from 221 raster grid values</span>
+</span><span class='line'>climatePLS <span class="o">&lt;-</span> plsreg1<span class="p">(</span>taraMat<span class="p">,</span> fourierPC<span class="o">$</span>PC1<span class="p">,</span> comps <span class="o">=</span> <span class="m">3</span><span class="p">)</span>
+</span><span class='line'>plot<span class="p">(</span>climatePLS<span class="p">)</span><span class="c1">#plot circle of correlations in order to determine the influence of predictor variables</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src="/images/RplotCircles.png" width="450" height="393" title="'PLS correlation circle'" ></p>
+
+<p>It is obvious from Figure 2. that the variables in question share no common variation pattern and are totally unrelated. If the chosen data was better, some of the blue lines (predictors) would run parallel with the orange one (response). If the R<sup>2</sup> value for this model is examined (it is a part of climatePLS object &ndash; climatePLS$R2) the unrelatedness of predictors and response in this model gets even more obvious (R<sup>2</sup> = 0.035). Predictors in this model are also highly correlated within themselves, which renders them rather useles in prediction, as was stated at the onset.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h1 class="entry-title"><a href="/blog/2014/08/05/automated-outlines-with-opencv-in-python/">Automated Outlines With openCV in Python</a></h1>
     
     
@@ -1794,54 +1868,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/02/01/xy-outlines-in-gimp-and-imagej/">XY Outlines in GIMP and imageJ</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-02-01T11:23:55+01:00" pubdate data-updated="true">Feb 1<span>st</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>This post continues on the first post about outline deformations and presents a simple way for generating outlines as XY data. XY format is very convenient for representing outline and line art in R or python. This type of visualization can be produced using <a href="http://www.gimp.org" target="_blank">GIMP</a> and <a href="http://rsbweb.nih.gov/ij" target="_blank">imageJ</a> through a sequence of easy steps. GIMP enables easy extraction of the central object from the image background. First step in outline extraction should be the precise definition of the object boundaries, such that the contrast between the object and the background is maximal. Example picture for this post is available <a href="http://goo.gl/bkirX7" target="_blank">here</a>. After opening the picture in GIMP workspace it looks like in Figure 1.</p>
-
-<p><img src="/images/Gimp1.png" width="375" height="289" title="'Gimp import'" > <img class="right" src="/images/Gimp2.png" width="375" height="290" title="'Gimp scissors'" ></p>
-
-<p>The easiest way to separate this chamois cranium from its background is to use <code>Scissor Select Tool</code> from the GIMP toolbox. This tool can nicely track the path between sucessive control points that should be placed along the desired object (Figure 2). When control points are placed along the shape, selection can be completed by pressing enter, and the background can be deleted by inverting selection pressing <code>Ctrl+I</code>. and deleting it using the delete key (Figure 3). Selection should be inverted once more and converted to path; from the <code>Select</code> menu <code>To Path</code>. Finally, stroke path (Figure 4, path card and right click on selection, <code>Stroke path</code>) gives the desired outline that can be exported as .tiff for imageJ through <code>Export</code> in the <code>File</code> menu.</p>
-
-<p><img src="/images/Gimp3.png" width="375" height="290" title="'Gimp no background'" > <img class="right" src="/images/Gimp4.png" width="375" height="289" title="'Gimp stroke path'" ></p>
-
-<p>In imageJ, picture should be converted to binary in <code>Process</code> menu, by selecting <code>Binary</code> and <code>Make Binary</code>. Final step is saving the binary image selection as XY data. First the outline should be selected by the magic wand selection tool (Figure 5) and then the image should be saved in XY format, in <code>File</code> menu, <code>Save as</code> and select <code>XY coordinates</code>. The XY data is also available <a href="http://goo.gl/d44PxK" target="_blank">here</a>.</p>
-
-<p><img src="/images/GimpNo.png" width="310" height="326" title="'imageJ'" ></p>
-
-<p>Now the .txt file could be easily imported into R and python.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -1864,6 +1890,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/09/02/pls-model-for-temperature-in-r/">PLS Model for Temperature in R</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/08/05/automated-outlines-with-opencv-in-python/">Automated Outlines With openCV in Python</a>
       </li>
     
@@ -1877,10 +1907,6 @@
     
       <li class="post">
         <a href="/blog/2014/05/17/complete-procrustes-in-python/">Complete Procrustes in Python</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/05/03/modularity-graphs-and-triangulations/">Modularity, Graphs and Triangulations</a>
       </li>
     
   </ul>

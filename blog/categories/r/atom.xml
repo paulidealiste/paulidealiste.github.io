@@ -4,7 +4,7 @@
   <title><![CDATA[Category: R | Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/blog/categories/r/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-08-05T20:13:26+02:00</updated>
+  <updated>2014-09-02T14:35:02+02:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -12,6 +12,41 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[PLS Model for Temperature in R]]></title>
+    <link href="http://paulidealiste.github.io/blog/2014/09/02/pls-model-for-temperature-in-r/"/>
+    <updated>2014-09-02T13:01:59+02:00</updated>
+    <id>http://paulidealiste.github.io/blog/2014/09/02/pls-model-for-temperature-in-r</id>
+    <content type="html"><![CDATA[<p>Continuing on the post about the climate data extraction in R, this post demonstrates a simple approach to using PLS (partial least squares) for determining the common covariance patterns between morphology and mean monthly temperature (although the model is likely to be bad). Morphology data can be found  <a href = "http://goo.gl/7BQ4tT"> here</a>. This dataset only contains PCA scores of individuals for the first two PC axes (Figure 1), extracted from the Fourier descriptors of horn shape. PC1 axis (92%) clearly separates males and females on the basis of respective horn shape.</p>
+
+<p><img class="center" src="/images/pca1plot.png" width="450" height="393" title="&lsquo;ordinary PCA&rsquo;" ></p>
+
+<p>Temperature data are extracted using geoTiffs from  <a href="http://www.worldclim.org/" target="_blank">WorldClim</a> database, as in the mentioned post about climate data extraction. The ready-made dataset of mean monthly temperatures for the above study locality can be found <a href = "http://goo.gl/2fAlAF"> here</a>.</p>
+
+<p>```r Importing data and plotting the Figure 1 PCA
+fourierPC &lt;&ndash; read.table(&ldquo;~/fourierPC.txt&rdquo;, header = TRUE, sep = &ldquo;,&rdquo;) #by default they are in the home directory
+matTaraMean &lt;&ndash; read.table(&ldquo;~/matTaraMean.txt&rdquo;, header = TRUE, sep = &ldquo;,&rdquo;)</p>
+
+<p>library(ggplot2)
+theme_set(theme_bw())
+sex &lt;&ndash; c(&ldquo;f&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;, &ldquo;m&rdquo;,&ldquo;m&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;,&ldquo;f&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;,&ldquo;f&rdquo;,&ldquo;m&rdquo;,&ldquo;f&rdquo;) #individual sex is known in advance
+ggplot(fourierPC, aes(PC1, PC2)) + geom_point(size = 5, shape = 19, aes(color = sex))
+```
+PLS analysis is a useful multivariate technique used for determining the common variation patterns in two blocks of data and is sometimes reffered to as PLS regression. In this post, of all PLS implementations in R, the choice is on the fabulous <em>plsdepot</em> library, developed and maintained by Gaston Sanchez, whose <a href="http://gastonsanchez.com" target="_blank"> blog/personal page</a> and work in general was a great insipiration for Creative Morphometrics. His approach is very well explained and documented over at his page, so only direct implementation on the data above will be provided here.</p>
+
+<p><code>r PLS plsdepot library
+library(plsdepot)
+taraMat &lt;- matTaraMean[sample(221, 26),] #extract 26 samples from 221 raster grid values
+climatePLS &lt;- plsreg1(taraMat, fourierPC$PC1, comps = 3)
+plot(climatePLS)#plot circle of correlations in order to determine the influence of predictor variables
+</code></p>
+
+<p><img class="center" src="/images/RplotCircles.png" width="450" height="393" title="&lsquo;PLS correlation circle&rsquo;" ></p>
+
+<p>It is obvious from Figure 2. that the variables in question share no common variation pattern and are totally unrelated. If the chosen data was better, some of the blue lines (predictors) would run parallel with the orange one (response). If the R<sup>2</sup> value for this model is examined (it is a part of climatePLS object &ndash; climatePLS$R2) the unrelatedness of predictors and response in this model gets even more obvious (R<sup>2</sup> = 0.035). Predictors in this model are also highly correlated within themselves, which renders them rather useles in prediction, as was stated at the onset.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Simple Angles and Nice Plots]]></title>
@@ -360,99 +395,6 @@ m &lt;- ggplot(forplo, aes(x = value, fill = loc)) + geom_histogram() + facet_gr
 <img class="center" src="/images/Fig6climate.png" width="802" height="700" title="&lsquo;histograms&rsquo;" ></p>
 
 <p>It is obvious that the Tara locality has higer mean monthly temperature, on average for every month, and also it has less temperature variaton than R1.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[R Generator and a Colorful PCA]]></title>
-    <link href="http://paulidealiste.github.io/blog/2014/02/23/r-generator-and-a-colorful-pca/"/>
-    <updated>2014-02-23T11:24:16+01:00</updated>
-    <id>http://paulidealiste.github.io/blog/2014/02/23/r-generator-and-a-colorful-pca</id>
-    <content type="html"><![CDATA[<p>As simple as it may seem, sample data generation is not a trivial task, especially when random landmarks are to be generated. Usually, one would use multivariate normal distribution-based generator (like mvrnorm in R`s MASS package) in order to generate correlated data. The following function was used to generate data similar to the real world datased, unfortunately based directly on it, by using the coefficients from regressions between successive columns in a data matrix, which represent landmark coordinates in XY data matrix. The following function uses <a href="http://goo.gl/ijI1kn" target="_blank">this</a> data matrix (446 individuals and 28 landmarks), and performs regressions between X-Y pairs for all coordinates. Finally it uses intercepts and slopes to infer mean and SD for rnorm function, random number generator.</p>
-
-<p>```r Resampler function for random resamples of a real data matrix</p>
-
-<p>resampler &lt;&ndash; function(mat) #simulations based on rnorm random sampling
-{
-  x &lt;&ndash; dim(mat)[1]
-  y &lt;&ndash; dim(mat)[2]
-  indexrow &lt;&ndash; c(2:x)
-  combinations &lt;&ndash; matrix(c(1:y,2:y), ncol = 2) #ignore the warning message
-  slope &lt;&ndash; numeric(y)
-  intercept &lt;&ndash; numeric(y)
-  sds &lt;&ndash; numeric(y)
-  for(i in 1:y)
-  {</p>
-
-<pre><code>veca &lt;- mat[,combinations[i,]][,1]
-vecb &lt;- mat[,combinations[i,]][,2]
-model &lt;- lm(veca~vecb)
-slope[i] &lt;- coef(model)[2]
-intercept[i] &lt;- coef(model)[1]
-sds[i] &lt;- sd(mat[,combinations[i,]][,1])
-</code></pre>
-
-<p>  }
-  coefs &lt;&ndash; data.frame(intercept,slope,sds)
-  cexox &lt;&ndash; data.frame(c(1:x))
-  for (i in 1:y)
-  {</p>
-
-<pre><code>dataCol &lt;- rnorm(length(mat[,combinations[i,]][,2]),mean=intercept[i]+slope[i]*mat[,combinations[i,]][,2],sd=sds)
-cexox &lt;- cbind(cexox, dataCol)
-</code></pre>
-
-<p>  }
-  sampleMatrix &lt;&ndash; as.matrix(cexox)
-  sampleMatrix &lt;&ndash; sampleMatrix[,-1]
-  return(sampleMatrix)
-}</p>
-
-<p>resampledCap &lt;&ndash; resampler(capreolusMatrix) #resample the original matrix-generate random coordinates
-```
-When the function finishes the output is also an XY matrix, which needs to be converted to an array in order to use it in gpagen function from the <em>geomorph</em> package. After that the procedure follows all the usual steps of the GM analysis, with the exception of factor levels generation in order to simulate grouping, and finally performing PCA on the Procrustes shape variables.</p>
-
-<p><code>r Basic GM procedures and factor level generation
-library(geomorph)
-capreolusArray &lt;- arrayspecs(resampledCap, 28, 2, byLand = FALSE)
-capreolusGPA &lt;- gpagen(capreolusArray, ShowPlot = FALSE)
-pop &lt;- sample(5, 446, replace = TRUE) #generate random 5 population partition
-pop[which(pop == 1)] &lt;- "pop1"
-pop[which(pop == 2)] &lt;- "pop2"
-pop[which(pop == 3)] &lt;- "pop3"
-pop[which(pop == 4)] &lt;- "pop4"
-pop[which(pop == 5)] &lt;- "pop5"
-capreolusGPA2d &lt;- two.d.array(capreolusGPA$coords) #get the data in XY format for PCA
-</code></p>
-
-<p>PCA is then done using the usual R`s prcomp function and <em>ggplot2</em> for plotting the data points using fantastic <a href="http://colorbrewer2.org/" target="_blank">ColorBrewer</a> color schemes (which are the names of types and palettes in <em>ggplot2</em> scale_color_brewer geom). In order to fine-tune the PCA figure, the ggplot2 can also use custom fonts for plot annotation. Prior to that, fonts must be imported and registered, which is greatly facilitated by using the <em>extrafont</em> library.</p>
-
-<p>```r PCA and ggplot2 code for a PCA scatterplot
-capPCAwhole &lt;&ndash; prcomp(capreolusGPA2d)
-capPCA &lt;&ndash; data.frame(capPCAwhole$x[,1], capPCAwhole$x[,2], capPCAwhole$x[,3], capPCAwhole$x[,4])
-capPCA &lt;&ndash; data.frame(capPCA, pop)
-names(capPCA) &lt;&ndash; c(&ldquo;PC1&rdquo;,&ldquo;PC2&rdquo;,&ldquo;PC3&rdquo;,&ldquo;PC4&rdquo;,&ldquo;pop&rdquo;) #prepare a data.frame for ggplot2
-meanPCA1 &lt;&ndash; aggregate(capPCA[,1], mean, by = list(capPCA[,5])) #calculate average PC score per group for plotting
-meanPCA2 &lt;&ndash; aggregate(capPCA[,2], mean, by = list(capPCA[,5]))
-meanPCA &lt;&ndash; data.frame(meanPCA1, meanPCA2[,2])
-names(meanPCA) &lt;&ndash; c(&ldquo;pop&rdquo;,&ldquo;PC1&rdquo;,&ldquo;PC2&rdquo;)</p>
-
-<p>library(extrafont) #for using i.e. Times New Roman Fonts in ggplots
-font_import(pattern=&ldquo;[T/t]imes&rdquo;) #this imports Times font family
-loadfonts(device=&ldquo;pdf&rdquo;)</p>
-
-<p>library (ggplot2)
-theme_set(theme_bw())
-pcaplot &lt;&ndash; ggplot(capPCA, aes(x=PC1, y=PC2, group = pop)) + geom_point(size = 7, shape = 19, aes(color=pop)) + scale_color_brewer(palette=&ldquo;Set1&rdquo;)
-pcaplot &lt;&ndash; pcaplot + theme(panel.grid.major = element_line(size = 0.8, linetype = 2)) + theme(panel.grid.minor = element_line(size = 1, linetype = 2))
-pcaplot &lt;&ndash; pcaplot + theme(text=element_text(size=20, family=&ldquo;Times New Roman&rdquo;), legend.text=element_text(size = 22, family = &ldquo;Times New Roman&rdquo;), legend.title = element_text(family =&ldquo;Times New Roman&rdquo;)) + xlab(&ldquo;PC1&rdquo;) + ylab(&ldquo;PC2&rdquo;)
-pcaplot &lt;&ndash; pcaplot + geom_point(data = meanPCA, size = 14, shape = 19) + geom_text(data = meanPCA, size = 10, label = meanPCA$pop, family = &ldquo;Times New Roman&rdquo;, vjust = -0.9)
-pcaplot
-```</p>
-
-<p><img class="center" src="/images/pcaplot.png" width="616" height="466" title="&lsquo;PCA&rsquo;" ></p>
-
-<p>The plot indicates very little differentiation between the populations, but I guess that`s well expected since so much randomness is at hand.</p>
 ]]></content>
   </entry>
   
