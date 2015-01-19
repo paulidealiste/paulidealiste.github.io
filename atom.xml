@@ -4,7 +4,7 @@
   <title><![CDATA[Creative morphometrics]]></title>
   <link href="http://paulidealiste.github.io/atom.xml" rel="self"/>
   <link href="http://paulidealiste.github.io/"/>
-  <updated>2014-09-02T14:35:02+02:00</updated>
+  <updated>2015-01-19T20:57:22+01:00</updated>
   <id>http://paulidealiste.github.io/</id>
   <author>
     <name><![CDATA[Miloš Blagojević]]></name>
@@ -12,6 +12,57 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Efficient Outlines Around Points in R]]></title>
+    <link href="http://paulidealiste.github.io/blog/2015/01/18/efficient-outlines-around-points-in-r/"/>
+    <updated>2015-01-18T10:25:19+01:00</updated>
+    <id>http://paulidealiste.github.io/blog/2015/01/18/efficient-outlines-around-points-in-r</id>
+    <content type="html"><![CDATA[<p>Convex hull is one of the most widely used techniques for finding the minimum enclosing shape around a set of points in a plane, but for certain tasks it is necessery to find such shape which encloses concave parts of the outline as well. Convex hulls are also sensitive to localized point groups, far apart from the majority of other points. In these cases, hulls enclose a lot of empty space so that the possible underlining shape is obscured. In geometric morphometrics, outlines around the set of landmarks in the plane can provide the idea of shape, useful for visualization of the underlining shape (i.e. the shape described by these points). Possibly, such outlines may be analysed further, with the usual GM analytic procedures. Alpha shape<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup> is the generalization of the convex hull for a set of points in the plane which can be used for shape reconstruction, since the frontier of an alpha shape is a linear approximation of the original shape. In R, this technique is implemented in the <em>alphahull</em> library. For this post, randomly generated points-in-the-plane data will be used.</p>
+
+<figure class='code'><figcaption><span>Generating data and loading the library</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>library<span class="p">(</span>alphahull<span class="p">)</span>
+</span><span class='line'>sampleData <span class="o">&lt;-</span> data.frame<span class="p">(</span>x<span class="o">=</span>runif<span class="p">(</span><span class="m">30</span><span class="p">,</span> <span class="m">10</span><span class="p">,</span> <span class="m">50</span><span class="p">),</span> y<span class="o">=</span>runif<span class="p">(</span><span class="m">30</span><span class="p">,</span><span class="m">10</span><span class="p">,</span><span class="m">50</span><span class="p">))</span> <span class="c1">#with uniform number generators</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For a set of points, alpha shape is based on the Delaunay triangulation and its corresponding Voronoi diagram, so they are found first, followed by alpha shape and alpha hull.</p>
+
+<figure class='code'><figcaption><span>Calculating Delaunay triangulation, Voronoi diagram and alpha shape of the sample data</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>sampleDel <span class="o">&lt;-</span> delvor<span class="p">(</span>sampleData<span class="p">)</span> <span class="c1">#Delaunay/Voronoi</span>
+</span><span class='line'>sampleAlpha <span class="o">&lt;-</span> ashape<span class="p">(</span>sampleData<span class="p">,</span> alpha <span class="o">=</span> <span class="m">9</span><span class="p">)</span> <span class="c1">#Alpha shape</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The value of the parameter alpha is determined with respect to the dimensionality of data points, since it represents the minimal distance for icnlusion or exclusion of the neighbouring points within the alpha shape procedure.</p>
+
+<figure class='code'><figcaption><span>Plotting of the corresponding shapes</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>plot<span class="p">(</span>sampleDel<span class="p">,</span> col<span class="o">=</span>c<span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="s">&quot;darkturquoise&quot;</span><span class="p">,</span> <span class="s">&quot;grey80&quot;</span><span class="p">,</span><span class="m">1</span><span class="p">),</span> lwd <span class="o">=</span> c<span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">),</span> cex <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span> xlab <span class="o">=</span> <span class="kc">NA</span><span class="p">,</span> ylab <span class="o">=</span> <span class="kc">NA</span><span class="p">)</span>
+</span><span class='line'>points<span class="p">(</span>sampleData<span class="p">,</span> col <span class="o">=</span> <span class="s">&quot;darkorange&quot;</span><span class="p">,</span> pch <span class="o">=</span> <span class="m">16</span><span class="p">,</span> cex <span class="o">=</span> <span class="m">1.5</span><span class="p">)</span> <span class="c1">#Plot of the Delaunay</span>
+</span><span class='line'>plot<span class="p">(</span>sampleAlpha<span class="p">,</span> wlines <span class="o">=</span> <span class="s">&quot;del&quot;</span><span class="p">,</span> col <span class="o">=</span> c<span class="p">(</span><span class="s">&quot;goldenrod4&quot;</span><span class="p">,</span><span class="m">1</span><span class="p">,</span> <span class="s">&quot;darkturquoise&quot;</span><span class="p">),</span> lwd <span class="o">=</span> c<span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">4</span><span class="p">),</span> cex <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span> xlab <span class="o">=</span> <span class="kc">NA</span><span class="p">,</span> ylab <span class="o">=</span> <span class="kc">NA</span><span class="p">)</span>
+</span><span class='line'>points<span class="p">(</span>sampleData<span class="p">,</span> col <span class="o">=</span> <span class="s">&quot;darkorange&quot;</span><span class="p">,</span> pch <span class="o">=</span> <span class="m">16</span><span class="p">,</span> cex <span class="o">=</span> <span class="m">1.3</span><span class="p">)</span> <span class="c1">#Plot of the alpha shape</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When the value of alpha is selected taking into account the spacing between the points, the enclosing outline can be obtained so that it approximates the most probable shape of the points in the plane (Figure 1, Figure 2).</p>
+
+<p><img class="center" src="http://paulidealiste.github.io/images/Originalanddelaunay.png" width="640" height="275" title="'Random points Delaunay Voronoi'" >
+<img class="center" src="http://paulidealiste.github.io/images/borderingalpha.png" width="640" height="275" title="'Random points Bordering alphashape'" ></p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Edelsbrunner, H., Kirkpatrick, D.G. and R. Seidel. 1983. On the shape of a set of points in the plane. <em>IEEE Transactions on information theory</em>, <strong>29</strong>: 551-559.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[PLS Model for Temperature in R]]></title>

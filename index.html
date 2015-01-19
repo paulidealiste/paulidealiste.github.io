@@ -75,6 +75,84 @@
       
   <header>
     
+      <h1 class="entry-title"><a href="/blog/2015/01/18/efficient-outlines-around-points-in-r/">Efficient Outlines Around Points in R</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-18T10:25:19+01:00" pubdate data-updated="true">Jan 18<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Convex hull is one of the most widely used techniques for finding the minimum enclosing shape around a set of points in a plane, but for certain tasks it is necessery to find such shape which encloses concave parts of the outline as well. Convex hulls are also sensitive to localized point groups, far apart from the majority of other points. In these cases, hulls enclose a lot of empty space so that the possible underlining shape is obscured. In geometric morphometrics, outlines around the set of landmarks in the plane can provide the idea of shape, useful for visualization of the underlining shape (i.e. the shape described by these points). Possibly, such outlines may be analysed further, with the usual GM analytic procedures. Alpha shape<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup> is the generalization of the convex hull for a set of points in the plane which can be used for shape reconstruction, since the frontier of an alpha shape is a linear approximation of the original shape. In R, this technique is implemented in the <em>alphahull</em> library. For this post, randomly generated points-in-the-plane data will be used.</p>
+
+<figure class='code'><figcaption><span>Generating data and loading the library</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>library<span class="p">(</span>alphahull<span class="p">)</span>
+</span><span class='line'>sampleData <span class="o">&lt;-</span> data.frame<span class="p">(</span>x<span class="o">=</span>runif<span class="p">(</span><span class="m">30</span><span class="p">,</span> <span class="m">10</span><span class="p">,</span> <span class="m">50</span><span class="p">),</span> y<span class="o">=</span>runif<span class="p">(</span><span class="m">30</span><span class="p">,</span><span class="m">10</span><span class="p">,</span><span class="m">50</span><span class="p">))</span> <span class="c1">#with uniform number generators</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For a set of points, alpha shape is based on the Delaunay triangulation and its corresponding Voronoi diagram, so they are found first, followed by alpha shape and alpha hull.</p>
+
+<figure class='code'><figcaption><span>Calculating Delaunay triangulation, Voronoi diagram and alpha shape of the sample data</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>sampleDel <span class="o">&lt;-</span> delvor<span class="p">(</span>sampleData<span class="p">)</span> <span class="c1">#Delaunay/Voronoi</span>
+</span><span class='line'>sampleAlpha <span class="o">&lt;-</span> ashape<span class="p">(</span>sampleData<span class="p">,</span> alpha <span class="o">=</span> <span class="m">9</span><span class="p">)</span> <span class="c1">#Alpha shape</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The value of the parameter alpha is determined with respect to the dimensionality of data points, since it represents the minimal distance for icnlusion or exclusion of the neighbouring points within the alpha shape procedure.</p>
+
+<figure class='code'><figcaption><span>Plotting of the corresponding shapes</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>plot<span class="p">(</span>sampleDel<span class="p">,</span> col<span class="o">=</span>c<span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="s">&quot;darkturquoise&quot;</span><span class="p">,</span> <span class="s">&quot;grey80&quot;</span><span class="p">,</span><span class="m">1</span><span class="p">),</span> lwd <span class="o">=</span> c<span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">),</span> cex <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span> xlab <span class="o">=</span> <span class="kc">NA</span><span class="p">,</span> ylab <span class="o">=</span> <span class="kc">NA</span><span class="p">)</span>
+</span><span class='line'>points<span class="p">(</span>sampleData<span class="p">,</span> col <span class="o">=</span> <span class="s">&quot;darkorange&quot;</span><span class="p">,</span> pch <span class="o">=</span> <span class="m">16</span><span class="p">,</span> cex <span class="o">=</span> <span class="m">1.5</span><span class="p">)</span> <span class="c1">#Plot of the Delaunay</span>
+</span><span class='line'>plot<span class="p">(</span>sampleAlpha<span class="p">,</span> wlines <span class="o">=</span> <span class="s">&quot;del&quot;</span><span class="p">,</span> col <span class="o">=</span> c<span class="p">(</span><span class="s">&quot;goldenrod4&quot;</span><span class="p">,</span><span class="m">1</span><span class="p">,</span> <span class="s">&quot;darkturquoise&quot;</span><span class="p">),</span> lwd <span class="o">=</span> c<span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">4</span><span class="p">),</span> cex <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span> xlab <span class="o">=</span> <span class="kc">NA</span><span class="p">,</span> ylab <span class="o">=</span> <span class="kc">NA</span><span class="p">)</span>
+</span><span class='line'>points<span class="p">(</span>sampleData<span class="p">,</span> col <span class="o">=</span> <span class="s">&quot;darkorange&quot;</span><span class="p">,</span> pch <span class="o">=</span> <span class="m">16</span><span class="p">,</span> cex <span class="o">=</span> <span class="m">1.3</span><span class="p">)</span> <span class="c1">#Plot of the alpha shape</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When the value of alpha is selected taking into account the spacing between the points, the enclosing outline can be obtained so that it approximates the most probable shape of the points in the plane (Figure 1, Figure 2).</p>
+
+<p><img class="center" src="/images/Originalanddelaunay.png" width="640" height="275" title="'Random points Delaunay Voronoi'" >
+<img class="center" src="/images/borderingalpha.png" width="640" height="275" title="'Random points Bordering alphashape'" ></p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Edelsbrunner, H., Kirkpatrick, D.G. and R. Seidel. 1983. On the shape of a set of points in the plane. <em>IEEE Transactions on information theory</em>, <strong>29</strong>: 551-559.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h1 class="entry-title"><a href="/blog/2014/09/02/pls-model-for-temperature-in-r/">PLS Model for Temperature in R</a></h1>
     
     
@@ -1693,181 +1771,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/02/23/r-generator-and-a-colorful-pca/">R Generator and a Colorful PCA</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-02-23T11:24:16+01:00" pubdate data-updated="true">Feb 23<span>rd</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>As simple as it may seem, sample data generation is not a trivial task, especially when random landmarks are to be generated. Usually, one would use multivariate normal distribution-based generator (like mvrnorm in R`s MASS package) in order to generate correlated data. The following function was used to generate data similar to the real world datased, unfortunately based directly on it, by using the coefficients from regressions between successive columns in a data matrix, which represent landmark coordinates in XY data matrix. The following function uses <a href="http://goo.gl/ijI1kn" target="_blank">this</a> data matrix (446 individuals and 28 landmarks), and performs regressions between X-Y pairs for all coordinates. Finally it uses intercepts and slopes to infer mean and SD for rnorm function, random number generator.</p>
-
-<figure class='code'><figcaption><span>Resampler function for random resamples of a real data matrix</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class='r'><span class='line'>resampler <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>mat<span class="p">)</span> <span class="c1">#simulations based on rnorm random sampling</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  x <span class="o">&lt;-</span> dim<span class="p">(</span>mat<span class="p">)[</span><span class="m">1</span><span class="p">]</span>
-</span><span class='line'>  y <span class="o">&lt;-</span> dim<span class="p">(</span>mat<span class="p">)[</span><span class="m">2</span><span class="p">]</span>
-</span><span class='line'>  indexrow <span class="o">&lt;-</span> c<span class="p">(</span><span class="m">2</span><span class="o">:</span>x<span class="p">)</span>
-</span><span class='line'>  combinations <span class="o">&lt;-</span> matrix<span class="p">(</span>c<span class="p">(</span><span class="m">1</span><span class="o">:</span>y<span class="p">,</span><span class="m">2</span><span class="o">:</span>y<span class="p">),</span> ncol <span class="o">=</span> <span class="m">2</span><span class="p">)</span> <span class="c1">#ignore the warning message</span>
-</span><span class='line'>  slope <span class="o">&lt;-</span> numeric<span class="p">(</span>y<span class="p">)</span>
-</span><span class='line'>  intercept <span class="o">&lt;-</span> numeric<span class="p">(</span>y<span class="p">)</span>
-</span><span class='line'>  sds <span class="o">&lt;-</span> numeric<span class="p">(</span>y<span class="p">)</span>
-</span><span class='line'>  <span class="kr">for</span><span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span>y<span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    veca <span class="o">&lt;-</span> mat<span class="p">[,</span>combinations<span class="p">[</span>i<span class="p">,]][,</span><span class="m">1</span><span class="p">]</span>
-</span><span class='line'>    vecb <span class="o">&lt;-</span> mat<span class="p">[,</span>combinations<span class="p">[</span>i<span class="p">,]][,</span><span class="m">2</span><span class="p">]</span>
-</span><span class='line'>    model <span class="o">&lt;-</span> lm<span class="p">(</span>veca<span class="o">~</span>vecb<span class="p">)</span>
-</span><span class='line'>    slope<span class="p">[</span>i<span class="p">]</span> <span class="o">&lt;-</span> coef<span class="p">(</span>model<span class="p">)[</span><span class="m">2</span><span class="p">]</span>
-</span><span class='line'>    intercept<span class="p">[</span>i<span class="p">]</span> <span class="o">&lt;-</span> coef<span class="p">(</span>model<span class="p">)[</span><span class="m">1</span><span class="p">]</span>
-</span><span class='line'>    sds<span class="p">[</span>i<span class="p">]</span> <span class="o">&lt;-</span> sd<span class="p">(</span>mat<span class="p">[,</span>combinations<span class="p">[</span>i<span class="p">,]][,</span><span class="m">1</span><span class="p">])</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  coefs <span class="o">&lt;-</span> data.frame<span class="p">(</span>intercept<span class="p">,</span>slope<span class="p">,</span>sds<span class="p">)</span>
-</span><span class='line'>  cexox <span class="o">&lt;-</span> data.frame<span class="p">(</span>c<span class="p">(</span><span class="m">1</span><span class="o">:</span>x<span class="p">))</span>
-</span><span class='line'>  <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span>y<span class="p">)</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>    dataCol <span class="o">&lt;-</span> rnorm<span class="p">(</span>length<span class="p">(</span>mat<span class="p">[,</span>combinations<span class="p">[</span>i<span class="p">,]][,</span><span class="m">2</span><span class="p">]),</span>mean<span class="o">=</span>intercept<span class="p">[</span>i<span class="p">]</span><span class="o">+</span>slope<span class="p">[</span>i<span class="p">]</span><span class="o">*</span>mat<span class="p">[,</span>combinations<span class="p">[</span>i<span class="p">,]][,</span><span class="m">2</span><span class="p">],</span>sd<span class="o">=</span>sds<span class="p">)</span>
-</span><span class='line'>    cexox <span class="o">&lt;-</span> cbind<span class="p">(</span>cexox<span class="p">,</span> dataCol<span class="p">)</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  sampleMatrix <span class="o">&lt;-</span> as.matrix<span class="p">(</span>cexox<span class="p">)</span>
-</span><span class='line'>  sampleMatrix <span class="o">&lt;-</span> sampleMatrix<span class="p">[,</span><span class="m">-1</span><span class="p">]</span>
-</span><span class='line'>  <span class="kr">return</span><span class="p">(</span>sampleMatrix<span class="p">)</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>resampledCap <span class="o">&lt;-</span> resampler<span class="p">(</span>capreolusMatrix<span class="p">)</span> <span class="c1">#resample the original matrix-generate random coordinates</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>When the function finishes the output is also an XY matrix, which needs to be converted to an array in order to use it in gpagen function from the <em>geomorph</em> package. After that the procedure follows all the usual steps of the GM analysis, with the exception of factor levels generation in order to simulate grouping, and finally performing PCA on the Procrustes shape variables.</p>
-
-<figure class='code'><figcaption><span>Basic GM procedures and factor level generation</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='r'><span class='line'>library<span class="p">(</span>geomorph<span class="p">)</span>
-</span><span class='line'>capreolusArray <span class="o">&lt;-</span> arrayspecs<span class="p">(</span>resampledCap<span class="p">,</span> <span class="m">28</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> byLand <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
-</span><span class='line'>capreolusGPA <span class="o">&lt;-</span> gpagen<span class="p">(</span>capreolusArray<span class="p">,</span> ShowPlot <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
-</span><span class='line'>pop <span class="o">&lt;-</span> sample<span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="m">446</span><span class="p">,</span> replace <span class="o">=</span> <span class="kc">TRUE</span><span class="p">)</span> <span class="c1">#generate random 5 population partition</span>
-</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">1</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop1&quot;</span>
-</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">2</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop2&quot;</span>
-</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">3</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop3&quot;</span>
-</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">4</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop4&quot;</span>
-</span><span class='line'>pop<span class="p">[</span>which<span class="p">(</span>pop <span class="o">==</span> <span class="m">5</span><span class="p">)]</span> <span class="o">&lt;-</span> <span class="s">&quot;pop5&quot;</span>
-</span><span class='line'>capreolusGPA2d <span class="o">&lt;-</span> two.d.array<span class="p">(</span>capreolusGPA<span class="o">$</span>coords<span class="p">)</span> <span class="c1">#get the data in XY format for PCA</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>PCA is then done using the usual R`s prcomp function and <em>ggplot2</em> for plotting the data points using fantastic <a href="http://colorbrewer2.org/" target="_blank">ColorBrewer</a> color schemes (which are the names of types and palettes in <em>ggplot2</em> scale_color_brewer geom). In order to fine-tune the PCA figure, the ggplot2 can also use custom fonts for plot annotation. Prior to that, fonts must be imported and registered, which is greatly facilitated by using the <em>extrafont</em> library.</p>
-
-<figure class='code'><figcaption><span>PCA and ggplot2 code for a PCA scatterplot</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='r'><span class='line'>capPCAwhole <span class="o">&lt;-</span> prcomp<span class="p">(</span>capreolusGPA2d<span class="p">)</span>
-</span><span class='line'>capPCA <span class="o">&lt;-</span> data.frame<span class="p">(</span>capPCAwhole<span class="o">$</span>x<span class="p">[,</span><span class="m">1</span><span class="p">],</span> capPCAwhole<span class="o">$</span>x<span class="p">[,</span><span class="m">2</span><span class="p">],</span> capPCAwhole<span class="o">$</span>x<span class="p">[,</span><span class="m">3</span><span class="p">],</span> capPCAwhole<span class="o">$</span>x<span class="p">[,</span><span class="m">4</span><span class="p">])</span>
-</span><span class='line'>capPCA <span class="o">&lt;-</span> data.frame<span class="p">(</span>capPCA<span class="p">,</span> pop<span class="p">)</span>
-</span><span class='line'>names<span class="p">(</span>capPCA<span class="p">)</span> <span class="o">&lt;-</span> c<span class="p">(</span><span class="s">&quot;PC1&quot;</span><span class="p">,</span><span class="s">&quot;PC2&quot;</span><span class="p">,</span><span class="s">&quot;PC3&quot;</span><span class="p">,</span><span class="s">&quot;PC4&quot;</span><span class="p">,</span><span class="s">&quot;pop&quot;</span><span class="p">)</span> <span class="c1">#prepare a data.frame for ggplot2</span>
-</span><span class='line'>meanPCA1 <span class="o">&lt;-</span> aggregate<span class="p">(</span>capPCA<span class="p">[,</span><span class="m">1</span><span class="p">],</span> mean<span class="p">,</span> by <span class="o">=</span> list<span class="p">(</span>capPCA<span class="p">[,</span><span class="m">5</span><span class="p">]))</span> <span class="c1">#calculate average PC score per group for plotting</span>
-</span><span class='line'>meanPCA2 <span class="o">&lt;-</span> aggregate<span class="p">(</span>capPCA<span class="p">[,</span><span class="m">2</span><span class="p">],</span> mean<span class="p">,</span> by <span class="o">=</span> list<span class="p">(</span>capPCA<span class="p">[,</span><span class="m">5</span><span class="p">]))</span>
-</span><span class='line'>meanPCA <span class="o">&lt;-</span> data.frame<span class="p">(</span>meanPCA1<span class="p">,</span> meanPCA2<span class="p">[,</span><span class="m">2</span><span class="p">])</span>
-</span><span class='line'>names<span class="p">(</span>meanPCA<span class="p">)</span> <span class="o">&lt;-</span> c<span class="p">(</span><span class="s">&quot;pop&quot;</span><span class="p">,</span><span class="s">&quot;PC1&quot;</span><span class="p">,</span><span class="s">&quot;PC2&quot;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>library<span class="p">(</span>extrafont<span class="p">)</span> <span class="c1">#for using i.e. Times New Roman Fonts in ggplots</span>
-</span><span class='line'>font_import<span class="p">(</span>pattern<span class="o">=</span><span class="s">&quot;[T/t]imes&quot;</span><span class="p">)</span> <span class="c1">#this imports Times font family</span>
-</span><span class='line'>loadfonts<span class="p">(</span>device<span class="o">=</span><span class="s">&quot;pdf&quot;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>library <span class="p">(</span>ggplot2<span class="p">)</span>
-</span><span class='line'>theme_set<span class="p">(</span>theme_bw<span class="p">())</span>
-</span><span class='line'>pcaplot <span class="o">&lt;-</span> ggplot<span class="p">(</span>capPCA<span class="p">,</span> aes<span class="p">(</span>x<span class="o">=</span>PC1<span class="p">,</span> y<span class="o">=</span>PC2<span class="p">,</span> group <span class="o">=</span> pop<span class="p">))</span> <span class="o">+</span> geom_point<span class="p">(</span>size <span class="o">=</span> <span class="m">7</span><span class="p">,</span> shape <span class="o">=</span> <span class="m">19</span><span class="p">,</span> aes<span class="p">(</span>color<span class="o">=</span>pop<span class="p">))</span> <span class="o">+</span> scale_color_brewer<span class="p">(</span>palette<span class="o">=</span><span class="s">&quot;Set1&quot;</span><span class="p">)</span>
-</span><span class='line'>pcaplot <span class="o">&lt;-</span> pcaplot <span class="o">+</span> theme<span class="p">(</span>panel.grid.major <span class="o">=</span> element_line<span class="p">(</span>size <span class="o">=</span> <span class="m">0.8</span><span class="p">,</span> linetype <span class="o">=</span> <span class="m">2</span><span class="p">))</span> <span class="o">+</span> theme<span class="p">(</span>panel.grid.minor <span class="o">=</span> element_line<span class="p">(</span>size <span class="o">=</span> <span class="m">1</span><span class="p">,</span> linetype <span class="o">=</span> <span class="m">2</span><span class="p">))</span>
-</span><span class='line'>pcaplot <span class="o">&lt;-</span> pcaplot <span class="o">+</span> theme<span class="p">(</span>text<span class="o">=</span>element_text<span class="p">(</span>size<span class="o">=</span><span class="m">20</span><span class="p">,</span> family<span class="o">=</span><span class="s">&quot;Times New Roman&quot;</span><span class="p">),</span> legend.text<span class="o">=</span>element_text<span class="p">(</span>size <span class="o">=</span> <span class="m">22</span><span class="p">,</span> family <span class="o">=</span> <span class="s">&quot;Times New Roman&quot;</span><span class="p">),</span> legend.title <span class="o">=</span> element_text<span class="p">(</span>family <span class="o">=</span><span class="s">&quot;Times New Roman&quot;</span><span class="p">))</span> <span class="o">+</span> xlab<span class="p">(</span><span class="s">&quot;PC1&quot;</span><span class="p">)</span> <span class="o">+</span> ylab<span class="p">(</span><span class="s">&quot;PC2&quot;</span><span class="p">)</span>
-</span><span class='line'>pcaplot <span class="o">&lt;-</span> pcaplot <span class="o">+</span> geom_point<span class="p">(</span>data <span class="o">=</span> meanPCA<span class="p">,</span> size <span class="o">=</span> <span class="m">14</span><span class="p">,</span> shape <span class="o">=</span> <span class="m">19</span><span class="p">)</span> <span class="o">+</span> geom_text<span class="p">(</span>data <span class="o">=</span> meanPCA<span class="p">,</span> size <span class="o">=</span> <span class="m">10</span><span class="p">,</span> label <span class="o">=</span> meanPCA<span class="o">$</span>pop<span class="p">,</span> family <span class="o">=</span> <span class="s">&quot;Times New Roman&quot;</span><span class="p">,</span> vjust <span class="o">=</span> <span class="m">-0.9</span><span class="p">)</span>
-</span><span class='line'>pcaplot
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><img class="center" src="/images/pcaplot.png" width="616" height="466" title="'PCA'" ></p>
-
-<p>The plot indicates very little differentiation between the populations, but I guess that`s well expected since so much randomness is at hand.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -1890,6 +1793,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/01/18/efficient-outlines-around-points-in-r/">Efficient Outlines Around Points in R</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/09/02/pls-model-for-temperature-in-r/">PLS Model for Temperature in R</a>
       </li>
     
@@ -1905,10 +1812,6 @@
         <a href="/blog/2014/06/09/simple-angles-and-nice-plots/">Simple Angles and Nice Plots</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/05/17/complete-procrustes-in-python/">Complete Procrustes in Python</a>
-      </li>
-    
   </ul>
 </section>
 
@@ -1922,7 +1825,7 @@
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2014 - Miloš Blagojević -
+  Copyright &copy; 2015 - Miloš Blagojević -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

@@ -1,0 +1,269 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Efficient Outlines Around Points in R - Creative morphometrics</title>
+  <meta name="author" content="Miloš Blagojević">
+
+  
+  <meta name="description" content="This post is about the possible usage of alpha shapes for finding the outline around random points in a plane">
+
+  <meta name="keywords" content="delaunay, outlines, points, alpha_shapes">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://paulidealiste.github.io/blog/2015/01/18/efficient-outlines-around-points-in-r">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Creative morphometrics" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Creative morphometrics</a></h1>
+  
+    <h2>Using R and python for colorful research of biological shape</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:paulidealiste.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/software">Software</a></li>
+  <li><a href="/about">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Efficient Outlines Around Points in R</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-18T10:25:19+01:00" pubdate data-updated="true">Jan 18<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Convex hull is one of the most widely used techniques for finding the minimum enclosing shape around a set of points in a plane, but for certain tasks it is necessery to find such shape which encloses concave parts of the outline as well. Convex hulls are also sensitive to localized point groups, far apart from the majority of other points. In these cases, hulls enclose a lot of empty space so that the possible underlining shape is obscured. In geometric morphometrics, outlines around the set of landmarks in the plane can provide the idea of shape, useful for visualization of the underlining shape (i.e. the shape described by these points). Possibly, such outlines may be analysed further, with the usual GM analytic procedures. Alpha shape<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup> is the generalization of the convex hull for a set of points in the plane which can be used for shape reconstruction, since the frontier of an alpha shape is a linear approximation of the original shape. In R, this technique is implemented in the <em>alphahull</em> library. For this post, randomly generated points-in-the-plane data will be used.</p>
+
+<figure class='code'><figcaption><span>Generating data and loading the library</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>library<span class="p">(</span>alphahull<span class="p">)</span>
+</span><span class='line'>sampleData <span class="o">&lt;-</span> data.frame<span class="p">(</span>x<span class="o">=</span>runif<span class="p">(</span><span class="m">30</span><span class="p">,</span> <span class="m">10</span><span class="p">,</span> <span class="m">50</span><span class="p">),</span> y<span class="o">=</span>runif<span class="p">(</span><span class="m">30</span><span class="p">,</span><span class="m">10</span><span class="p">,</span><span class="m">50</span><span class="p">))</span> <span class="c1">#with uniform number generators</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For a set of points, alpha shape is based on the Delaunay triangulation and its corresponding Voronoi diagram, so they are found first, followed by alpha shape and alpha hull.</p>
+
+<figure class='code'><figcaption><span>Calculating Delaunay triangulation, Voronoi diagram and alpha shape of the sample data</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>sampleDel <span class="o">&lt;-</span> delvor<span class="p">(</span>sampleData<span class="p">)</span> <span class="c1">#Delaunay/Voronoi</span>
+</span><span class='line'>sampleAlpha <span class="o">&lt;-</span> ashape<span class="p">(</span>sampleData<span class="p">,</span> alpha <span class="o">=</span> <span class="m">9</span><span class="p">)</span> <span class="c1">#Alpha shape</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The value of the parameter alpha is determined with respect to the dimensionality of data points, since it represents the minimal distance for icnlusion or exclusion of the neighbouring points within the alpha shape procedure.</p>
+
+<figure class='code'><figcaption><span>Plotting of the corresponding shapes</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='r'><span class='line'>plot<span class="p">(</span>sampleDel<span class="p">,</span> col<span class="o">=</span>c<span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="s">&quot;darkturquoise&quot;</span><span class="p">,</span> <span class="s">&quot;grey80&quot;</span><span class="p">,</span><span class="m">1</span><span class="p">),</span> lwd <span class="o">=</span> c<span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">),</span> cex <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span> xlab <span class="o">=</span> <span class="kc">NA</span><span class="p">,</span> ylab <span class="o">=</span> <span class="kc">NA</span><span class="p">)</span>
+</span><span class='line'>points<span class="p">(</span>sampleData<span class="p">,</span> col <span class="o">=</span> <span class="s">&quot;darkorange&quot;</span><span class="p">,</span> pch <span class="o">=</span> <span class="m">16</span><span class="p">,</span> cex <span class="o">=</span> <span class="m">1.5</span><span class="p">)</span> <span class="c1">#Plot of the Delaunay</span>
+</span><span class='line'>plot<span class="p">(</span>sampleAlpha<span class="p">,</span> wlines <span class="o">=</span> <span class="s">&quot;del&quot;</span><span class="p">,</span> col <span class="o">=</span> c<span class="p">(</span><span class="s">&quot;goldenrod4&quot;</span><span class="p">,</span><span class="m">1</span><span class="p">,</span> <span class="s">&quot;darkturquoise&quot;</span><span class="p">),</span> lwd <span class="o">=</span> c<span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">4</span><span class="p">),</span> cex <span class="o">=</span> <span class="m">0.1</span><span class="p">,</span> xlab <span class="o">=</span> <span class="kc">NA</span><span class="p">,</span> ylab <span class="o">=</span> <span class="kc">NA</span><span class="p">)</span>
+</span><span class='line'>points<span class="p">(</span>sampleData<span class="p">,</span> col <span class="o">=</span> <span class="s">&quot;darkorange&quot;</span><span class="p">,</span> pch <span class="o">=</span> <span class="m">16</span><span class="p">,</span> cex <span class="o">=</span> <span class="m">1.3</span><span class="p">)</span> <span class="c1">#Plot of the alpha shape</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When the value of alpha is selected taking into account the spacing between the points, the enclosing outline can be obtained so that it approximates the most probable shape of the points in the plane (Figure 1, Figure 2).</p>
+
+<p><img class="center" src="/images/Originalanddelaunay.png" width="640" height="275" title="'Random points Delaunay Voronoi'" >
+<img class="center" src="/images/borderingalpha.png" width="640" height="275" title="'Random points Bordering alphashape'" ></p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Edelsbrunner, H., Kirkpatrick, D.G. and R. Seidel. 1983. On the shape of a set of points in the plane. <em>IEEE Transactions on information theory</em>, <strong>29</strong>: 551-559.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Miloš Blagojević</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-18T10:25:19+01:00" pubdate data-updated="true">Jan 18<span>th</span>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/r/'>R</a>, <a class='category' href='/blog/categories/utilities/'>utilities</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://paulidealiste.github.io/blog/2015/01/18/efficient-outlines-around-points-in-r/" data-via="" data-counturl="http://paulidealiste.github.io/blog/2015/01/18/efficient-outlines-around-points-in-r/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/09/02/pls-model-for-temperature-in-r/" title="Previous Post: PLS model for temperature in R">&laquo; PLS model for temperature in R</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <img class="center none" src="/images/roehead.png" width="207" height="347" title="'Roe deer'" >
+<center>I am an adventurer in the <font color = "#0099FF">wonderful world</font> of biological shape analysis. Mostly this blog includes posts about R and python routines for doing shape analyses and displaying beautiful results.</center>  
+<center>E-mail me at <a href="mailto:paulidealiste@gmail.com"><font color = "orange">paulidealiste@gmail.com</font></a></center>
+<p></p>
+<center><script src="//platform.linkedin.com/in.js" type="text/javascript">
+  lang: en_US
+</script>
+<script type="IN/Share" data-url="http://creativemorphometrics.co.vu/"></script></center><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/01/18/efficient-outlines-around-points-in-r/">Efficient Outlines Around Points in R</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/02/pls-model-for-temperature-in-r/">PLS Model for Temperature in R</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/08/05/automated-outlines-with-opencv-in-python/">Automated Outlines With openCV in Python</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/07/python-project-and-explore/">Python Project and Explore</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/09/simple-angles-and-nice-plots/">Simple Angles and Nice Plots</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - Miloš Blagojević -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
